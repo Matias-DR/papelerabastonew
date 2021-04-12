@@ -1,0 +1,9 @@
+NOMBRE, PRECIO POR UNIDAD, STOCK
+qwer,1,0
+asdf,2,0
+zxcv,3,0
+tyui,4,0
+ghjk,5,0
+gggg,9,9
+tyughj,234,234
+zxcvvbmn,345,345
