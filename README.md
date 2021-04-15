@@ -1,2 +1,0 @@
-# PapelerAbasto
-PapelerAbasto-GUI
