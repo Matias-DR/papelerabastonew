@@ -1,2 +1,2 @@
-# papelerabastonew
+# PapelerAbasto
 PapelerAbasto-GUI
