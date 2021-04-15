@@ -1,5 +1,6 @@
 import constant as ct
 import PySimpleGUI as ps
+import domain as dm
 
 
 ps.theme('PapelerAbasto')
@@ -7,6 +8,10 @@ ps.theme('PapelerAbasto')
 
 class RecordComponent:
     def __init__(self):
+        pass
+
+    def __str__(self):
+        # RETORNA SUS DATOS CONCATENADOS EN STR
         pass
 
 
@@ -26,28 +31,87 @@ class BuyRecordComponent(RecordComponent):
 
 
 class ListComponent:
-    # CLASE PARA EL RENDER (UI) DE LA LISTA
-    def __init__(self):
-        pass
+    """
+        Clase padre para las listas de registros
+        Define los componentes en comun entre las listas
+            - Column
+            - Registros
+            - Key
+    """
+    def __init__(self, key, records):
+        self._key = key
+        self._records = records
+
+    def render_layout(self):
+        """
+            COL
+        """
+        layout = [
+            [record] for record in self._records
+        ]
+        return ps.Column(layout=layout, scrollable=True, vertical_scroll_only=True)
+
+    def render_record_to_top(self, index):
+        """
+        Recibe el índice de un registro y lo sube
+        """
+        record_to_top = self._records[index].list()
+        for i in reversed(range(1, index+1)):
+            self._records[i].update_rendered_record(self._records[i-1].list())
+        self._records[0].update_rendered_record(record_to_top)
+
+    def update_rendered_records(self, records):
+        """
+        Recibe una lista de registros con la que actualiza la renderizada
+        """
+        for i in range(len(records)):
+            self._records[i].update_rendered_record(records[i].list())
+
+    def sort_min_max(self):
+        sorted_records = sorted(self._records, key=lambda record: record.name())
+        self.update_rendered_records(sorted_records.list())
+
+    def sort_max_min(self):
+        sorted_records = sorted(self._records, key=lambda record: record.name(), reverse=True)
+        self.update_rendered_records(sorted_records.list())
 
 
 class StockListComponent(ListComponent):
-    def __init__(self):
-        pass
+    def __init__(self, key):
+        self._stock_control = dm.StockList()
+        super().__init__(key, self._stock_control.records())
+
+    def search(self):
+        index = self._stock_control.search()
+        if index:
+            self.render_record_to_top(index)
 
 
 class SaleListComponent(ListComponent):
-    def __init__(self):
-        pass
+    def __init__(self, key):
+        self._sale_control = dm.SaleList()
+        super().__init__(key, self._sale_control.records())
+
+    def search(self):
+        index = self._sale_control.search()
+        if index:
+            self.render_record_to_top(index)
 
 
 class BuyListComponent(ListComponent):
-    def __init__(self):
-        pass
+    def __init__(self, key):
+        self._buy_control = dm.BuyList()
+        super().__init__(key, self._buy_control.records())
+
+    def search(self):
+        index = self._buy_control.search()
+        if index:
+            self.render_record_to_top(index)
 
 
 class SectionComponent:
     """
+        Clase padre para el render de las secciones
         Define los elementos en común entre secciones:
             - Buscador
             - Ordenador
@@ -55,7 +119,6 @@ class SectionComponent:
             - Índice principal
             - Exportador
     """
-    # CAMBIAR EL NOMBRE DE LA CLASE POR LO QUE REFIERA A LA SECCIÓN
     # COMO LISTA DE REGISTROS CREAR E INSERTAR UNA CLASE QUE CONTROLE LA PARTE GRÁFICA DE LA MISMA
     # CREAR E INSERTAR UNA NUEVA CLASE QUE REFIERA AL CONTROL DE TIPO CÁLCULO DE ESA LISTA
     # EL RENDER DE LA LISTA SE ENCUENTRA EN ESA CLASE, Y LE PIDE LOS REGISTROS A LA CLASE DE CONTROL
@@ -165,13 +228,15 @@ class StockSectionComponent(SectionComponent):
         super().__init__(key)
         self._clean_options.append('Vacíos')
         self.record_adder = RecordAdderComponent(key)
+        self._stock_control = dm.StockList()
         self.render_layout()
 
     def layout(self):
         """
-        [ 
+        [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ],
             [ INDEX_IN, INDEX_IN, INDEX_IN, APPLY_BTT ],
+            [ RCS_LIST_COL ],
             [ CLEANER_COMBO, CLEANR_BTT, ADD_SPIN, ADD_BTT ]
         ]
         """
@@ -199,11 +264,27 @@ class StockSectionComponent(SectionComponent):
                           key=self._key+',apply_percent', image_size=ct.BUTTON_SIZE)
         self._layout[-1].append(apply)
 
+    def render_stock_list(self):
+        """
+        [
+            [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ],
+            [ INDEX_IN, INDEX_IN, INDEX_IN, APPLY_BTT ],
+            [ RCS_LIST_COL ]
+        ]
+        """
+        records = self._stock_control.records()
+        layout = [
+            ps.Column(layout=records, size=ct.STOCK_RCS_LIST_COL_SIZE,
+                      scrollable=True, vertical_scroll_only=True)
+        ]
+        self._layout.append(layout)
+
     def render_cleaner(self):
         """
         [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ],
             [ INDEX_IN, INDEX_IN, INDEX_IN, APPLY_BTT ],
+            [ RCS_LIST_COL ],
             [ CLEANER_COMBO, CLEANR_BTT ]
         ]
         """
@@ -219,6 +300,7 @@ class StockSectionComponent(SectionComponent):
         [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ],
             [ INDEX_IN, INDEX_IN, INDEX_IN, APPLY_BTT ],
+            [ RCS_LIST_COL ],
             [ CLEANER_COMBO, CLEANR_BTT, ADD_SPIN, ADD_BTT ]
         ]
         """
@@ -237,6 +319,7 @@ class StockSectionComponent(SectionComponent):
         super().render_index()
         self.render_index()
         self.render_apply_percent()
+        self.render_stock_list()
         self.render_cleaner()
         self.render_record_adder()
 
@@ -296,6 +379,7 @@ class SalesSectionComponent(SectionComponent):
         ]
         self._clean_options.append('Todos')
         self._trader = TraderComponent(key)
+        self._sales_control = dm.SaleList()
         self.render_layout()
 
     def layout(self):
@@ -303,6 +387,7 @@ class SalesSectionComponent(SectionComponent):
         [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ],
             [ INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN ],
+            [ RCS_LIST_COL ],
             [ TRADE_BTT, TRADE_BTT, TEXT_$, SPIN_%, CLEAN_COMBO, CLEAN_BTT ]
         ]
         """
@@ -325,11 +410,27 @@ class SalesSectionComponent(SectionComponent):
         ]
         self._layout[-1] += index
 
+    def render_sales_list(self):
+        """
+        [
+            [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ],  
+            [ INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN ],
+            [ RCS_LIST_COL ]
+        ]
+        """
+        records = self._sales_control.records()
+        layout = [
+            ps.Column(layout=records, size=ct.SALES_RCS_LIST_COL_SIZE,
+                      scrollable=True, vertical_scroll_only=True)
+        ]
+        self._layout.append(layout)
+
     def render_trader(self):
         """
         [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ],
             [ INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN ],
+            [ RCS_LIST_COL ],
             [ TRADE_BTT, TRADE_BTT, TEXT_$, SPIN_% ]
         ]
         """
@@ -341,6 +442,7 @@ class SalesSectionComponent(SectionComponent):
         [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ],
             [ INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN ],
+            [ RCS_LIST_COL ],
             [ TRADE_BTT, TRADE_BTT, TEXT_$, SPIN_%, CLEAN_COMBO, CLEAN_BTT ]
         ]
         """
@@ -355,6 +457,7 @@ class SalesSectionComponent(SectionComponent):
         super().render_layout()
         super().render_index()
         self.render_index()
+        self.render_sales_list()
         self.render_trader()
         self.render_cleaner()
 
@@ -374,14 +477,16 @@ class BuysSectionComponent(SectionComponent):
         self._clean_options.append('Todos')
         self._trader = TraderComponent(key)
         self._record_adder = RecordAdderComponent(key)
+        self._buys_control = dm.BuyList()
         self.render_layout()
 
     def layout(self):
         """
         [
-            [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT, CLEAN_COMBO, CLEAN_BTT, COLLECT_BTT ],  
+            [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT, COLLECT_BTT ],  
             [ INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN ],
-            [ TRADE_BTT, TRADE_BTT, TEXT_$, SPIN_% ]
+            [ RCS_LIST_COL ],
+            [ TRADE_BTT, TRADE_BTT, TEXT_$, SPIN_%, CLEAN_COMBO, CLEAN_BTT, ADD_SPIN, ADD_BTT ]
         ]
         """
         return self._layout
@@ -405,11 +510,27 @@ class BuysSectionComponent(SectionComponent):
         ]
         self._layout[-1] += index
 
+    def render_buys_list(self):
+        """
+        [
+            [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ],  
+            [ INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN ],
+            [ RCS_LIST_COL ]
+        ]
+        """
+        records = self._buys_control.records()
+        layout = [
+            ps.Column(layout=records, size=ct.BUYS_RCS_LIST_COL_SIZE,
+                      scrollable=True, vertical_scroll_only=True)
+        ]
+        self._layout.append(layout)
+
     def render_trader(self):
         """
         [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ],  
             [ INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN ],
+            [ RCS_LIST_COL ],
             [ TRADE_BTT, TRADE_BTT, TEXT_$, SPIN_% ]
         ]
         """
@@ -421,6 +542,7 @@ class BuysSectionComponent(SectionComponent):
         [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT, COLLECT_BTT ],  
             [ INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN ],
+            [ RCS_LIST_COL ],
             [ TRADE_BTT, TRADE_BTT, TEXT_$, SPIN_% ]
         ]
         """
@@ -433,6 +555,7 @@ class BuysSectionComponent(SectionComponent):
         [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT, COLLECT_BTT ],  
             [ INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN ],
+            [ RCS_LIST_COL ],
             [ TRADE_BTT, TRADE_BTT, TEXT_$, SPIN_%, CLEAN_COMBO, CLEAN_BTT ]
         ]
         """
@@ -448,6 +571,7 @@ class BuysSectionComponent(SectionComponent):
         [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT, COLLECT_BTT ],  
             [ INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN, INDEX_IN ],
+            [ RCS_LIST_COL ],
             [ TRADE_BTT, TRADE_BTT, TEXT_$, SPIN_%, CLEAN_COMBO, CLEAN_BTT, ADD_SPIN, ADD_BTT ]
         ]
         """
@@ -458,6 +582,7 @@ class BuysSectionComponent(SectionComponent):
         super().render_layout()
         super().render_index()
         self.render_index()
+        self.render_buys_list()
         self.render_trader()
         self.render_price_collector()
         self.render_cleaner()
