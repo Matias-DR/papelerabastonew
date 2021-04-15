@@ -1,4 +1,0 @@
-#!/bin/bash
-
-cd /home/papelerabasto/Sistema
-echo | sudo -S python3 ./papelerabasto.py
