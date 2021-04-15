@@ -2,6 +2,9 @@ import constant as ct
 import PySimpleGUI as ps
 
 
+ps.theme('PapelerAbasto')
+
+
 class RecordComponent:
     def __init__(self):
         pass
@@ -602,5 +605,4 @@ class Main:
 
 
 if __name__ == '__main__':
-    ps.theme('PapelerAbasto')
     Main().run()
