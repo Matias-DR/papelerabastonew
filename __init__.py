@@ -1,7 +1,10 @@
 from gui import Main
-from domain import FileManager as fm
+import sys
 
 
 if __name__ == '__main__':
-    fm.file_control()
-    Main().run()
+    try:
+        location = (int(sys.argv[-2])-2, int(sys.argv[-1])-30)
+    except:
+        location = (160, 10)
+    Main(location).run()
