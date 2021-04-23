@@ -694,7 +694,7 @@ class Main:
     def render_sales_buys_sc(self):
         '''
             [
-                [ COL ]
+                [ COL, COL ]
             ]
         '''
         layout = [[]]
@@ -704,20 +704,34 @@ class Main:
         self._layout[0].append(sales_buys)
 
     def render_options(self):
+        '''
+            [
+                [ COL, COL ],
+                [ FRAME ]
+            ]
+        '''
         options = self._exporter.layout()
         options[0] += [
-            ps.Button(button_text='', image_data=ct.PNG_TABLE,
-                      image_size=ct.BUTTON_SIZE, border_width=ct.BTT_BORDER_WIDTH),
-            ps.Button(button_text='', image_data=ct.PNG_THEME_CHANGE,
-                      image_size=ct.BUTTON_SIZE, border_width=ct.BTT_BORDER_WIDTH),
-            ps.Button(button_text='', image_data=ct.PNG_EXIT,
-                      image_size=ct.BUTTON_SIZE, border_width=ct.BTT_BORDER_WIDTH)
+            ps.Button(button_text='', image_data=ct.PNG_TABLE, key='report_view',
+                      image_size=ct.BTT_OPTION_IMAGE_SIZE, border_width=ct.BTT_BORDER_WIDTH,
+                      tooltip=ct.BTT_TOOLTIPS['report_view']),
+            ps.Button(button_text='', image_data=ct.PNG_THEME_CHANGE(), key='change_theme',
+                      image_size=ct.BTT_OPTION_IMAGE_SIZE, border_width=ct.BTT_BORDER_WIDTH,
+                      tooltip=ct.BTT_TOOLTIPS['change_theme']),
+            ps.Button(button_text='', image_data=ct.PNG_EXIT, key='exit',
+                      image_size=ct.BTT_OPTION_IMAGE_SIZE, border_width=ct.BTT_BORDER_WIDTH,
+                      tooltip=ct.BTT_TOOLTIPS['exit'])
         ]
-        options_frame = [
-            ps.Frame(title='', title_color=ct.FRAME_TITLE_COLOR[theme],
-                     layout=options, title_location='n', pad=ct.OPTIONS_FRAME_PAD)
+        options_col = [
+            [
+                ps.Column(layout=options, size=ct.OPTIONS_COL_SIZE, pad=(0, 0))
+            ]
         ]
-        self._layout.append(options_frame)
+        layout = [
+            ps.Frame(title='↓ OPCIONES ↓', title_color=ct.FRAME_TITLE_COLOR[theme],
+                     layout=options_col, title_location='n', pad=ct.OPTIONS_FRAME_PAD)
+        ]
+        self._layout.append(layout)
 
     def render_layout(self):
         '''
@@ -727,7 +741,7 @@ class Main:
         '''
         self.render_stock_sc()
         self.render_sales_buys_sc()
-        # self.render_options()
+        self.render_options()
 
     def save(self):
         for list_component in self._list_components:
