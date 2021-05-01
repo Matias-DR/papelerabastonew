@@ -413,7 +413,6 @@ class StockList(ListControl):
         ]
         window = gui.Main.window()
         window.extend_layout(window[self._key], layout)
-        print('llega')
         self._records.append(stock_record)
 
     def buy(self, records):
@@ -422,7 +421,7 @@ class StockList(ListControl):
             if existent_record:
                 existent_record.update_from_buy(record[1], record[2])
             else:
-                # ct.__restart__ = True
+                ct.__restart__ = True
                 self.add_record_from_buy(record)
             
 
@@ -551,6 +550,7 @@ class BuyList(ListControl):
 
     def buy(self):
         StockList.instance().buy(self.buy_report())
+        self._records = []
 
     def clean_all(self):
         self._records = []

@@ -8743,14 +8743,14 @@ Normally a tuple, but can be a simplified-dual-color-string "foreground on backg
                         top_window.DictionaryKeyCounter += 1
                 if element.Key is not None:
                     if element.Key in key_dict.keys():
-                        if element.Type  != ELEM_TYPE_BUTTON:   # for Buttons, let duplicate key errors be silent
-                            warnings.warn('*** Duplicate key found in your layout {} ***'.format(element.Key), UserWarning)
-                            warnings.warn('*** Replaced new key with {} ***'.format(str(element.Key) + str(self.UniqueKeyCounter)))
-                            if not SUPPRESS_ERROR_POPUPS:
-                                _error_popup_with_traceback('Duplicate key found in your layout', 'Dupliate key: {}'.format(element.Key),
-                                                            'Is being replaced with: {}'.format(str(element.Key) + str(self.UniqueKeyCounter)),
-                                                            'The line of code above shows you which layout, but does not tell you exactly where the element was defined',
-                                                            'The element type is {}'.format(element.Type))
+                        # if element.Type  != ELEM_TYPE_BUTTON:   # for Buttons, let duplicate key errors be silent
+                        #     warnings.warn('*** Duplicate key found in your layout {} ***'.format(element.Key), UserWarning)
+                        #     warnings.warn('*** Replaced new key with {} ***'.format(str(element.Key) + str(self.UniqueKeyCounter)))
+                        #     if not SUPPRESS_ERROR_POPUPS:
+                        #         _error_popup_with_traceback('Duplicate key found in your layout', 'Dupliate key: {}'.format(element.Key),
+                        #                                     'Is being replaced with: {}'.format(str(element.Key) + str(self.UniqueKeyCounter)),
+                        #                                     'The line of code above shows you which layout, but does not tell you exactly where the element was defined',
+                        #                                     'The element type is {}'.format(element.Type))
                         element.Key = str(element.Key) + str(self.UniqueKeyCounter)
                         self.UniqueKeyCounter += 1
                     key_dict[element.Key] = element
