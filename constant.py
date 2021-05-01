@@ -2,12 +2,15 @@ import pathlib as path
 from os import path as p
 from time import strftime as now
 from sys import platform
+from json import load
 
 
-def set_theme(theme):
-    THEME = theme
+def load_theme():
+    with open('theme.json') as theme:
+        return load(theme)
 
-__restart__ = True
+
+__restart__ = False
 __secure__ = True
 
 OS = platform
@@ -15,6 +18,7 @@ DATE = now('%d/%m/%Y')
 HOUR = now('%H:%M')
 HOME = str(path.Path.home()).replace('\\', '/')
 EXPORT_PATH = HOME+'/Desktop/'+'reporte {}.csv'.format(now('%d-%m-%Y (%H.%M hs.)'))
+IMAGE = b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9ElEQVQ4T3VTWRYDMQiS+x/aPgWX2HY+ZkkiAjKwuJB3g5s5+Om6c6E24qmzhnxVKRf7AiGiOI/BzBtIHREtYEAcdi9gMqn6g+nZnaAikl9N63n/U5zi2FPNEkAo2mhMqFsfLilRQ2lt2euBiKZLbnDISyIVfZ46moIfwpO091KS7dmcTqwpFPGRU9PrebVzBI4BSMIQmwxwbTxebmc02JsTO80rW6N1RUQesE45cM0kKOWET9qaSQleyM0g9Na1O++Zn7xSwkzyB2FpfXP6JkypLev4gxCaUr5NLN9rf0f5B8c97zdA5NU5eLSuP/icksGT7Q/rqoAi4wjvpQAAAABJRU5ErkJggg=='
 PNG_ICON = b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAEuUlEQVRoQ61aa2LbMAiWTrfmDGt2uLo9Q9fTeUMSFiBecus/SWws+HgLpZZSSi2lnPDl5nW8vJ9tEXI9P1/bHbn28XjnrM5Snn877d2r1srZS6YRQBAKpOpS1FLar1LOivdKQUALACn1NwHd1oQr2ETXxZW/LR8YYBYFWhol9weQBCXRoAYCNQ9k9Dn4XBWOa9Eii+t55BJEpm2LSHd6fv4215CAKQDpWW+Pd/DI6/JoL6LVIvkwo8LZzCYHpM8I1sH0d7lV5nqe7/goyJtNqHMGcwbIbkrUFRX72JZr0TTrajjmayovzQMz5Yi/PSCtBgjTo0jfEL4v0ReQFsku6wMRqyATyKZ/RsFbVKtwzgojM17KdYcA2xah6TQK4B0AaJXjcbSqKpUVrcWAZApRLmt1sbT0q/IYkkfp2gOzZREghhRJ3cmyChdqipChd13X6A23gCAAXrn1eDkeH5ColxCaQNZas1R2pzC0t2lB7N/pnbgVxnqCLaemZasXA1rpIpFLTTy2c10WoQjnd/FireV46cEYaQ9dkJrcc5k8GN1MRDtRXpgB3JpZbLvN12ppGYh0vlERPX71fU0UI1rKx9Ym1absaS12V00HO1mRCr0V7BcTsMbXa+/Oc4akxdtVWrayI1v66VuDPE1pKwSmEWgZrJZrixCuOXekCpj1bRNIVKmyA4FaSmsax2XGlMLvnmuVuRdXzZnQoOUGdIMVtUC4BgQ6T79i9Z8IRmzL26QksIwsolkgIPaWRaz+yYr4nSxHE0mpJD6Gci0j68EOVWWMdC7jIFTSDzAB6RiHcJMg6CBFatoG3AcXmRBLW4RqJJxRMS2gGFHgzOdZl6IrpoE02ZjG9aYwl8ttUBxEBJ53YVGPmS5gORAr1W5LYlUisQGSZNzk7ZcgsfS2E+xL6Rc1RcKnMQfb7qr6Oxn5aFpGDUaGn2t3yufnc7SEtu3oXCDn931tFcgyqnV8xgvM1SI2EJ5+9510AWJvfHz9ZzZXGRoNAnvPSPFVnm20lwZx1vet3iiKEcut2XmJIUR/tz+E0tfckLYG2RyuVfkGiBRIGiNQ1nAWJlsRdOVbvMlRxDLd2/VQEAwEpcEJQrFgP892MqVZYQcAyqbtWwgQzC7OUZhr6s7mp5KFpVDNZS8lpjZNzoYQFrpmXhkk1ulUojxrsg4gMCiA4JkSeAc4nutl6wC4GQwwMg0h5UeTU6tnY3vAao5lFdmcRcyjmnAnJmZszB6PrmMCgRdnJY5q+GBj5PhLo7dOblFEfuTQ5ZtH4EsXANr09g6pjOb0SZmjAk1tmlxIB58MCD6QrrHnCnN5PCKwCiY2itHmScoD9YiNea2tLk9vMiXrbmZp0XOrjMNm647ZYNIF7lRerfJLy0ZAfBDUsZZ/kPAIsLa0uqutYkW91hpvfY09vuigiei9s7BmEfRtKyZkQKMn9Pe8S/ypxibtk3WcwvcUMbzyaj3Xod01bGv/siF/AhiMsINtfdqgkTJkE80aI4Hj8gyiE68diqDTWhhxzwIwqwqHbAZ7NGYPW5FF2AmmP+q/JVloARLjYEWcejlAEsEzSN5ePs7WOJFrCjg4XzckIPjj2bPKwSCzYZTe/vP9B5EnEqSGTFFQAAAAAElFTkSuQmCC'
 PNG_SEARCH = b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAA6klEQVQ4jZ3SOU4DQRCF4Q/MkmBnGJCQLwImh4OwHMg+AmYOgASEiIwMAiIwYguMiC0BEgRdwTB4xiO/pKRXXX9XdTV/1UWGV3xHzMKv1AL6eMA+NrEY8SD8HhplgD7OsFKSb+I8IP+0g/uK4jxkiO1iIou26+gQg6L5Js1aRx28FM1PLNUELGOcN+bxgbWagHW8FwGX2K0J2MNV0exKe25OKW7hEVuTkj1pz2WQFi4wQnvSgYb0mYbSqjrSw3ZwFDeP8IPbMghpnBM84wtPOI6221E8FVKlVdwE5A4bs0DynVzPzUIIyCnGv28tMicRo6VgAAAAAElFTkSuQmCC'
 PNG_APPLY = b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAAVElEQVQ4jWNgGJGAjYGBIY4SzRsYGBjWkKOZlYGBYT0DA8NWBgYGdppojoc6jQ1NnA2qeQMWOYK2kOxsZA08pGpGdvIGBgaGl8Q4G58hSeRqHmkAAMX1D6aLBnmkAAAAAElFTkSuQmCC'
@@ -38,40 +42,48 @@ PNG_TABLE = b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gva
 PATHS = [
     'db/stock.json', 'db/sales.json', 'db/buys.json'
 ]
-OPTIONS_FRAME_PAD = ((10, 3), (1, 3))
-OPTIONS_COL_SIZE = (1190, 41)
-BTT_OPTION_IMAGE_SIZE = ((52, 20))
+FIRST_OPTION_PAD = ((0, 3), (3, 3))
+LAST_OPTION_PAD = ((3, 0), (3, 3))
+BTT_FIRST_SORT_PAD = ((9, 0), (3, 3))
+BTT_SORT_PAD = ((8, 0), (3, 3))
+APPLY_PAD = ((3, 0), (3, 3))
+RECORD_COL_PAD = ((0, 0), (3, 3))
+OPTIONS_FRAME_PAD = ((5, 0), (3, 3))
+OPTIONS_COL_SIZE = (1243, 41)
+BTT_ASCII_IMAGE_SIZE = ((52, 20))
+BTT_GENERAL_IMAGE_SIZE = ((52, 22))
+IMAGE_FONT = ('Helvetica, 18')
 CART_CANCEL_PAD = ((10, 3), (3, 3))
 COL_RC_PAD = (0, 0)
-STOCK_RCS_LIST_COL_SIZE = (459, 417)
-SALES_RCS_LIST_COL_SIZE = (635, 137)
-BUYS_RCS_LIST_COL_SIZE = (635, 136)
 BUTTON_SIZE = (20, 20)
 BTT_BORDER_WIDTH = 3
-STOCK_COL_SIZE = (495, 531)
-SALES_COL_SIZE = (671, 250)
-BUYS_COL_SIZE = (671, 249)
-SEARCHER_PAD = ((10, 5), (3, 3))
-FIRST_INDEX_INPUT_PAD = ((10, 0), (3, 0))
+STOCK_RCS_LIST_COL_SIZE = (480, 417)
+SALES_RCS_LIST_COL_SIZE = (707, 137)
+BUYS_RCS_LIST_COL_SIZE = (707, 136)
+SECTION_FRAME_PAD = ((0, 0), (3, 3))
+STOCK_COL_SIZE = (501, 526)
+SALES_COL_SIZE = (728, 246)
+BUYS_COL_SIZE = (728, 245)
+SEARCHER_PAD = ((0, 5), (3, 3))
+FIRST_INDEX_INPUT_PAD = ((0, 0), (3, 0))
 MID_INDEX_INPUT_PAD = ((0, 0), (3, 0))
 LAST_INDEX_INPUT_PAD = ((0, 5), (3, 0))
-NAME_INPUT_PAD = ((5, 0), (0, 0))
+NAME_INPUT_PAD = ((0, 0), (0, 0))
 MID_INPUT_PAD = ((0, 0), (0, 0))
 PERCENT_PAD = ((1, 0), (0, 0))
 CHECK_PAD = ((1, 1), (0, 0))
+TOTAL_PRICE_SIZE = (7, 1)
 BTT_TOOLTIPS = {
     'search': ' CLICK PARA REALIZAR LA BÚSQUEDA \n POR NOMBRE DE PRODUCTO ',
     'sort_min_max': ' CLICK PARA ORDENAR LA \n LISTA DE MENOR A MAYOR ',
     'sort_max_min': ' CLICK PARA ORDENAR LA \n LISTA DE MAYOR A MENOR ',
-    'apply_percent': ' CLICK PARA APLICAR LOS \n PORCENTAJES INDICADOS ',
+    'apply': ' CLICK PARA APLICAR LOS \n PORCENTAJES INDICADOS ',
     'delete': ' CLICK PARA ELIMINAR \n LOS REGISTROS INDICADOS ',
     'add': ' CLICK PARA AGREGAR \n LOS REGISTROS INDICADOS ',
     'folder': ' CLICK PARA GUARDAR COMO ',
     'export': ' CLICK PARA EXPORTAR ',
-    'sale_accept': ' CLICK PARA ACEPTAR \n Y REALIZAR LA VENTA ',
-    'sale_cancel': ' CLICK PARA CANCELAR \n Y ELIMINAR LA VENTA ',
-    'buy_accept': ' CLICK PARA ACEPTAR \n Y REALIZAR LA COMPRA ',
-    'buy_cancel': ' CLICK PARA CANCELAR \n Y ELIMINAR LA COMPRA ',
+    'accept_commerce': ' CLICK PARA ACEPTAR Y \n REALIZAR LA COMPRA / VENTA ',
+    'cancel_commerce': ' CLICK PARA CANCELAR Y \n ELIMINAR LA COMPRA / VENTA ',
     'refresh': ' CLICK PARA TOMAR LOS PRECIOS \n DE LOS PRODUCTOS EN STOCK ',
     'change_theme': ' CLICK PARA CAMBIAR EL TEMA VISUAL',
     'secure_mode': ' CLICK PARA CAMBIAR EL MODO SEGURO ',
@@ -82,6 +94,9 @@ SIZES = {
     'xxxs': (2, 1), 'xxs': (4, 1), 'xs': (5, 1), '+s': (7, 1), 's': (9, 1), 'sm': (11, 1),
     '+m': (12, 1), 'm': (14, 1), 'l': (21, 1), 'xl': (26, 1), 'xxl': (70, 1)
 }
+INPUT_COMMENT_SIZES = {
+    'stock': (35, 1), 'sales': (47, 1), 'buys': (56, 1)
+}
 SPIN_PERCENT_VALUES = [i for i in range(-100, 101, 5)]
 SPIN_RECORD_ADDER_VALUES = [i for i in range(0, 21, 2)]
 DEFAULT_STOCK_RC_VALUES = [
@@ -91,8 +106,13 @@ DEFAULT_BUY_RC_VALUES = [
     '', '', '', '', '', 0, 0
 ]
 
+INDEX = {
+    'Nombre': 0, '$ P/U': 1, 'Stock': 2, 'Cant.': 3,
+    'Proveedor': 4, '$ Fin.': -2, '%': -1
+}
+
 FRAME_TITLE_COLOR = {'PapelerAbasto': 'White', 'Default1': 'Black'}
-THEME = 'PapelerAbasto'
+THEME = load_theme()
 
 def set_png_theme():
     if THEME == 'PapelerAbasto':
