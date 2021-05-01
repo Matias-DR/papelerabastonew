@@ -134,9 +134,15 @@ class StockRecord(Record):
         except:
             return 0
 
+    def amount(self):
+        try:
+            return int(self._fields[2].get())
+        except:
+            return 0
+
     def update_from_buy(self, unit_price, amount):
         self._fields[1].update(unit_price)
-        self._fields[2].update(str(int(self._fields[2].get()) - int(amount)))
+        self._fields[2].update(str(self.amount() + int(amount)))
 
 
 class SaleRecord(Record):
@@ -406,9 +412,8 @@ class StockList(ListControl):
             stock_record.fields()
         ]
         window = gui.Main.window()
-        print('llega')
-        print(window[self._key].Rows)
         window.extend_layout(window[self._key], layout)
+        print('llega')
         self._records.append(stock_record)
 
     def buy(self, records):
@@ -546,6 +551,10 @@ class BuyList(ListControl):
 
     def buy(self):
         StockList.instance().buy(self.buy_report())
+
+    def clean_all(self):
+        self._records = []
+        ct.__restart__ = True
 
 
 if __name__ == '__main__':

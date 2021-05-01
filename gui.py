@@ -184,7 +184,8 @@ class SectionComponent:
             'sort_min_max': self.sort_min_max,
             'sort_max_min': self.sort_max_min,
             'export': self.export,
-            'apply': self.apply
+            'apply': self.apply,
+            'clean': self.clean
         }
 
     def layout(self):
@@ -341,7 +342,6 @@ class StockSectionComponent(SectionComponent):
         self._record_adder = RecordAdderComponent(self._key)
         funcs = {
             'add_records': self.add_records,
-            'clean': self.clean,
             'secure_mode': self.secure_mode
         }
         self._funcs.update(funcs)
@@ -585,6 +585,9 @@ class SalesSectionComponent(SectionComponent):
     def sell(self):
         self._list_control.sell()
 
+    def clean(self):
+        pass
+
 
 class BuysSectionComponent(SectionComponent):
     def __init__(self, key, layout):
@@ -750,6 +753,11 @@ class BuysSectionComponent(SectionComponent):
     def buy(self):
         self._list_control.buy()
 
+    def clean(self):
+        if self._element_clean_options.get() == 'Todos':
+            self._list_control.clean_all()
+        else:
+            self._list_control.clean_selected()
 
 class Main:
     _window = None
@@ -798,15 +806,15 @@ class Main:
                 self.save()
                 self.close()
             print(event)
-            # try:
-            splited_event = event.split(',')
-            var, func = splited_event[0], splited_event[1]
-            getattr(eval(var), 'callback')(func)
-            # except:
-            #     ct.__restart__ = False
-            # if ct.__restart__:
-            #     self.save()
-            #     self.restart()
+            try:
+                splited_event = event.split(',')
+                var, func = splited_event[0], splited_event[1]
+                getattr(eval(var), 'callback')(func)
+            except:
+                ct.__restart__ = False
+            if ct.__restart__:
+                self.save()
+                self.restart()
 
 
 if __name__ == '__main__':
