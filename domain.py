@@ -52,6 +52,7 @@ class Record:
             name, unit_price, stock
         ]
             # VER COMO SE GUARDA PRA QUE FUNCIONE EL BUY
+
     def add_check_field(self, value):
         check = ps.Check('', default=value, pad=ct.CHECK_PAD,
                                checkbox_color='White')
