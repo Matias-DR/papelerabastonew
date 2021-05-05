@@ -224,6 +224,15 @@ class CommerceList(RecordList):
             csv_report += rc[0].get_csv_report()
         return csv_report
 
+    def calculate_final_price(self):
+        """
+        :return: Float
+        """
+        final_price = 0
+        for rc in self.Rows:
+            final_price += rc[0].apply_final_price()
+        return final_price
+
 
 class SaleList(CommerceList):
     _instance = None
@@ -259,12 +268,3 @@ class SaleList(CommerceList):
 
     def export(self, path: str):
         sys(f'cp {CSV_SALES_PATH} {path}')
-
-    def calculate_final_price(self):
-        """
-        :return: Float
-        """
-        final_price = 0
-        for rc in self.Rows:
-            final_price += rc[0].apply_final_price()
-        return final_price
