@@ -12085,14 +12085,12 @@ def _fixed_map(style, style_name, option, highlight_colors=(None, None)):
 # @_timeit
 def PackFormIntoFrame(form, containing_frame, toplevel_form):
     """
-
     :param form: a window class
     :type form: (Window)
     :param containing_frame: ???
     :type containing_frame: ???
     :param toplevel_form: ???
     :type toplevel_form: (Window)
-
     """
 
     # Old bindings

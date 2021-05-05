@@ -112,7 +112,11 @@ class StockRecord(Record):
             for field in self._fields:
                 report.append(field.get())
         except:
-            report = ['', '', '', 0, 0]
+            report = [
+                self._fields[0].DefaultText, self._fields[1].DefaultText,
+                self._fields[2].DefaultText, self._fields[3].DefaultValue,
+                self._fields[4].InitialState
+            ]
         return report
 
     def secure_mode(self):
