@@ -267,9 +267,20 @@ class CommerceRecord(Record):
         self.Rows[0][4].update(final_price)
 
     def calculate_final_price(self):
+        """
+        :return: Float
+        """
         price = round(self.get_unit_price() * float(self.get_amount()), 2)
         percent = price * self.get_percent() / 100.
         return round(price + percent, 2)
+
+    def apply_final_price(self):
+        """
+        :return: Float
+        """
+        final_price = self.calculate_final_price()
+        self.update_final_price(final_price)
+        return final_price
 
     def get_csv_report(self):
         """

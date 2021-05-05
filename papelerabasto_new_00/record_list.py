@@ -261,4 +261,10 @@ class SaleList(CommerceList):
         sys(f'cp {CSV_SALES_PATH} {path}')
 
     def calculate_final_price(self):
-        pass
+        """
+        :return: Float
+        """
+        final_price = 0
+        for rc in self.Rows:
+            final_price += rc[0].apply_final_price()
+        return final_price
