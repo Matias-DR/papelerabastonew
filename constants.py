@@ -13,8 +13,27 @@ TIME = lambda: now('%H:%M')
 JSON_STOCK_PATH = './db/Stock.json'
 JSON_SALES_PATH = './db/Sales.json'
 JSON_BUYS_PATH = './db/Buys.json'
+JSON_PATHS = [
+    JSON_STOCK_PATH, JSON_SALES_PATH, JSON_BUYS_PATH
+]
 CSV_SALES_PATH = './db/Sales.csv'
 CSV_BUYS_PATH = './db/Buys.csv'
+
+# ------------------------------------------ #
+#               CSV HEADERS                  #
+# ------------------------------------------ #
+CSV_SALES_HEADER = [
+            [
+                'DÍA', 'HORA', 'NOMBRE', 'PRECIO POR UNIDAD', 'STOCK',
+                'CANTIDAD VENDIDA', 'PRECIO FINL', 'PORCENTAJE'
+            ]
+        ]
+CSV_BUYS_HEADER = [
+    [
+        'DÍA', 'HORA', 'NOMBRE', 'PRECIO POR UNIDAD', 'STOCK',
+        'CANTIDAD COMPRADA', 'PRECIO FINL', 'PROVEEDOR', 'PORCENTAJE'
+    ]
+]
 
 # ------------------------------------------ #
 #         RECORD ELEMENT PARAMETERS          #
@@ -48,5 +67,5 @@ RECORDLIST_COLUMN_SIZE = RL_TMP_SIZE
 RECORDLIST_COLUMN_PAD = RL_TMP_PAD
 SALELIST_COLUMN_SIZE = RL_TMP_SIZE
 SALELIST_COLUMN_PAD = RL_TMP_PAD
-BUYSLIST_COLUMN_SIZE = RL_TMP_SIZE
-BUYSLIST_COLUMN_PAD = RL_TMP_PAD
+BUYLIST_COLUMN_SIZE = RL_TMP_SIZE
+BUYLIST_COLUMN_PAD = RL_TMP_PAD

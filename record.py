@@ -179,16 +179,17 @@ class StockRecord(Record):
     def change_secure_mode(cls):
         cls._secure_mode = not cls._secure_mode
 
+    @classmethod
+    def get_empty_report(cls):
+        """
+        :return: List[Fields]
+        """
+        return ['', 0, 0, 0, False]
+
     def __init__(self, name: str='',
                  unit_price: float=0.,
                  stock: int=0, percent: int=0,
                  check: bool=False):
-        """
-        :key: Clave del registro\n
-        :name: Nombre del registro\n
-        :unit_price: Precio unitario del registro\n
-        :stock: Stock del registro\n
-        """
         super().__init__(name, unit_price, stock)
         self._add_percent_and_check_elements(percent, check)
 
@@ -345,8 +346,8 @@ class Test:
         index_elements = [
             [
                 Input(i, readonly=True,
-                    size=NAME_ELEMENT_SIZE,
-                    pad=NAME_ELEMENT_PAD) for i in index
+                      size=NAME_ELEMENT_SIZE,
+                      pad=NAME_ELEMENT_PAD) for i in index
             ]
         ]
         layout = [
@@ -474,6 +475,9 @@ class Test:
         self.test_rows()
         while True:
             e, _ = self.win.read()
+            if e == None:
+                self.win.close()
+                break
             getattr(self, e)()
 
 
