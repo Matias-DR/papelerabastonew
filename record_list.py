@@ -57,6 +57,7 @@ class FileManager:
 
     @staticmethod
     def save_in_json(path: str, data):
+        print('llegan', data)
         with open(path, 'w') as file:
             dump(data, file, indent=4)
 
@@ -177,7 +178,26 @@ class RecordList(Column):
             rc[0].solve_issue()
 
 
-class StockList(RecordList):
+class StockAndBuyList:
+    def __init__(self):
+        pass
+
+    def have_empty_records(self):
+        for rc in reversed(self.Rows):
+            if rc[0].is_empty():
+                return True
+
+    def remove_empty_records(self):
+        if self.have_empty_records():
+            for rc in reversed(self.Rows):
+                if rc[0].is_empty():
+                    self.Rows.remove(rc)
+            self.save_in_json()
+            return True
+        return False
+
+
+class StockList(RecordList, StockAndBuyList):
     @classmethod
     def new(cls):
         records = [
@@ -188,20 +208,16 @@ class StockList(RecordList):
         return cls(records)
 
     def __init__(self, records: list):
-        super().__init__(records=records,
-                         size=RECORDLIST_COLUMN_SIZE,
-                         pad=RECORDLIST_COLUMN_PAD)
+        RecordList.__init__(self, records=records,
+                            size=RECORDLIST_COLUMN_SIZE,
+                            pad=RECORDLIST_COLUMN_PAD)
+        StockAndBuyList.__init__(self)
 
     def stock_control(self):
         self.solve_issues()
         for rc in self.Rows:
             if not rc[0].have_stock():
                 rc[0].indicate_issue(index=2, color='Orange')
-
-    def remove_empty_records(self):
-        for rc in reversed(self.Rows):
-            if rc[0].is_empty():
-                self.Rows.remove(rc)
 
     def get_records_to_apply_percent(self):
         """
@@ -212,12 +228,6 @@ class StockList(RecordList):
     def apply_percent_to_records(self):
         for rc in self.get_records_to_apply_percent():
             rc[0].apply_percent()
-
-    def add_records(self, how_many_add: int):
-        records = FileManager.load(path=JSON_STOCK_PATH)
-        for _ in range(how_many_add):
-            records.append(StockRecord.get_empty_report())
-        FileManager.save_in_json(path=JSON_STOCK_PATH, data=records)
 
     # REGACTOR
     def add_record_from_buy(self, name: str, unit_price: float, stock: int):
@@ -284,6 +294,13 @@ class StockList(RecordList):
             SaleList.instance().add_records(report)
             return True
         return False
+
+    def add_records(self, how_many_add: int):
+        records = self.get_list_report()
+        for _ in range(how_many_add):
+            records.append(StockRecord.get_empty_report())
+        FileManager.save_in_json(path=JSON_STOCK_PATH, data=records)
+        return True
 
 
 class CommerceList(RecordList):
@@ -374,7 +391,7 @@ class SaleList(CommerceList):
         FileManager.save_in_json(path=JSON_SALES_PATH, data=actual_records)
 
 
-class BuyList(CommerceList):
+class BuyList(CommerceList, StockAndBuyList):
     @classmethod
     def new(cls):
         records = [
@@ -387,9 +404,10 @@ class BuyList(CommerceList):
         return cls(records)
 
     def __init__(self, records: list):
-        super().__init__(records=records,
-                         size=BUYLIST_COLUMN_SIZE,
-                         pad=BUYLIST_COLUMN_PAD)
+        CommerceList.__init__(self, records=records,
+                              size=BUYLIST_COLUMN_SIZE,
+                              pad=BUYLIST_COLUMN_PAD)
+        StockAndBuyList.__init__(self)
 
     def save_in_csv(self):
         FileManager.save_in_csv(path=CSV_BUYS_PATH, data=self.get_csv_report())
@@ -420,10 +438,11 @@ class BuyList(CommerceList):
             self.get_record(rc[0]).update_unit_price(rc[1])
 
     def add_records(self, how_many_add: int):
-        records = FileManager.load(path=JSON_BUYS_PATH)
+        records = self.get_list_report()
         for _ in range(how_many_add):
             records.append(BuyRecord.get_empty_report())
         FileManager.save_in_json(path=JSON_BUYS_PATH, data=records)
+        return True
 
 
 class Test:
@@ -434,6 +453,8 @@ class Test:
                 Button(button_text='test_add_records', border_width=BUTTON_BORDER_WIDTH),
                 Button(button_text='test_sell_records', border_width=BUTTON_BORDER_WIDTH),
                 Button(button_text='test_stock_control', border_width=BUTTON_BORDER_WIDTH),
+                Button(button_text='test_remove_empty_records', border_width=BUTTON_BORDER_WIDTH),
+                Button(button_text='test_instance', border_width=BUTTON_BORDER_WIDTH),
             ], [
                 StockList.instance(),
                 SaleList.instance(),
@@ -450,7 +471,6 @@ class Test:
             lt.save_in_json()
 
     def close(self, timeout=0):
-        self.save()
         self.win.read(timeout=timeout, close=True)
         exit()
 
@@ -462,13 +482,12 @@ class Test:
         self.lt[0].stock_control()
 
     def test_sell_records(self):
-        if self.lt[0].sell_records():
-            self.restart()
+        return self.lt[0].sell_records()
 
     def test_add_records(self):
         self.lt[0].add_records(2)
-        self.lt[2].add_records(2)
-        self.restart()
+        if self.lt[2].add_records(2):
+            return True
 
     def test_rows(self):
         print()
@@ -482,14 +501,29 @@ class Test:
         print(self.lt[2].Rows)
         print()
 
+    def test_remove_empty_records(self):
+        if self.lt[0].remove_empty_records() or self.lt[2].remove_empty_records():
+            return True
+        return False
+
+    def test_instance(self):
+        print()
+        print('TEST_INSTANCE')
+        print(self.lt[0] == StockList.instance())
+        print(self.lt[1] == SaleList.instance())
+        print(self.lt[2] == BuyList.instance())
+        print()
+
     def run(self):
         self.test_rows()
         while True:
             e, _ = self.win.read()
             if e == '-WINDOW CLOSE ATTEMPTED-':
+                self.save()
                 self.close()
                 break
-            getattr(self, e)()
+            if getattr(self, e)():
+                self.restart()
 
 if __name__ == '__main__':
     theme('PapelerAbasto')
