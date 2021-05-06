@@ -72,6 +72,14 @@ class RecordList(Column):
     """
     Superclase que define elementos predeterminados para toda lista de registros
     """
+    _instance = None
+
+    @classmethod
+    def instance(cls):
+        if not cls._instance:
+            cls._instance = cls.new()
+        return cls._instance
+
     def __init__(self, records: list, size: tuple, pad=tuple):
         super().__init__(layout=records,
                          size=size,
@@ -122,44 +130,54 @@ class RecordList(Column):
     def sort_list_max_min(self, field: int):
         self.update_from_report(sorted(self.report(), key=lambda rc: rc[field], reverse=True))
 
-    def add_record(self, record: Record):
-        row = [
-            record
-        ]
-        self.Rows.append(row)
-
     def get_list_report(self):
         """
         :return: List[List[Fields]]
         """
-        report = []
-        for rc in self.Rows:
-            try:
-                rc[0].get_report()
-            except:
-                rc[0].get_default_report()
-        return report
+        return [
+            rc[0].get_report() for rc in self.Rows
+        ]
 
-    def get_list_control(self):
+    def get_checked_records(self):
+        """
+        :return: List[Record]
+        """
+        checked_records = []
+        for rc in self.Rows:
+            if rc[0].is_checked():
+                checked_records.append(rc[0])
+        return checked_records
+
+    def have_checked_records(self):
         """
         :return: Boolean
         """
-        self.solve_error()
         for rc in self.Rows:
-            error = rc[0].get_error_status()
-            if error > -1:
-                rc[0].indicate_error(error)
-                return False
-        return True
+            if rc[0].is_checked():
+                return True
+        return False
 
-    def solve_error(self):
+    def get_list_control_status(self):
+        """
+        Indica el error dentro de los registros seleccionados\n
+        :return: Boolean
+        """
+        if self.have_checked_records():
+            self.solve_issues()
+            for rc in self.get_checked_records():
+                error = rc.get_error_status()
+                if error > -1:
+                    rc.indicate_issue(error)
+                    return False
+            return True
+        return False
+
+    def solve_issues(self):
         for rc in self.Rows:
-            rc[0].solve_error()
+            rc[0].solve_issue()
 
 
 class StockList(RecordList):
-    _instance = None
-
     @classmethod
     def new(cls):
         records = [
@@ -167,18 +185,18 @@ class StockList(RecordList):
                 StockRecord(name, unit_price, stock, percent, check)
             ] for name, unit_price, stock, percent, check in FileManager.load(path=JSON_STOCK_PATH)
         ]
-        return StockList(records)
-
-    @classmethod
-    def instance(cls):
-        if not StockList._instance:
-            _instance = StockList.new()
-        return _instance
+        return cls(records)
 
     def __init__(self, records: list):
         super().__init__(records=records,
                          size=RECORDLIST_COLUMN_SIZE,
                          pad=RECORDLIST_COLUMN_PAD)
+
+    def stock_control(self):
+        self.solve_issues()
+        for rc in self.Rows:
+            if not rc[0].have_stock():
+                rc[0].indicate_issue(index=2, color='Orange')
 
     def remove_empty_records(self):
         for rc in reversed(self.Rows):
@@ -201,8 +219,10 @@ class StockList(RecordList):
             records.append(StockRecord.get_empty_report())
         FileManager.save_in_json(path=JSON_STOCK_PATH, data=records)
 
+    # REGACTOR
     def add_record_from_buy(self, name: str, unit_price: float, stock: int):
-        self.add_record(StockRecord(name=name, unit_price=unit_price, stock=stock))
+        pass
+        # self.add_record(StockRecord(name=name, unit_price=unit_price, stock=stock))
 
     def update_records_from_buy(self, records: list):
         for rc in records:
@@ -215,16 +235,6 @@ class StockList(RecordList):
     def update_records_from_sale(self, records: list):
         for rc in records:
             self.get_record(rc[0]).update_from_sale(rc[1])
-
-    def get_checked_records(self):
-        """
-        :return: List[Record]
-        """
-        checked_records = []
-        for rc in self.Rows:
-            if rc[0].is_checked():
-                checked_records.append(rc[0])
-        return checked_records
 
     def collect_unit_prices_from_records(self, names: list):
         """
@@ -252,10 +262,33 @@ class StockList(RecordList):
         csv_report += self.get_list_report()
         FileManager.save_in_csv(path=path, data=csv_report, mode='w')
 
+    def get_sale_control_status(self):
+        """
+        :return: Boolean
+        """
+        if self.have_checked_records():
+            self.solve_issues()
+            for rc in self.get_checked_records():
+                if not rc.get_sale_control_status():
+                    return False
+            return True
+
+    def sell_records(self):
+        """
+        :return: Boolean
+        """
+        if self.get_sale_control_status():
+            report = [
+                rc.get_sale_report() for rc in self.get_checked_records()
+            ]
+            SaleList.instance().add_records(report)
+            return True
+        return False
+
 
 class CommerceList(RecordList):
-    def __init__(self, path: str, size: tuple, pad: tuple):
-        super().__init__(records=FileManager.load(path=path),
+    def __init__(self, records: list, size: tuple, pad: tuple):
+        super().__init__(records=records,
                          size=size,
                          pad=pad)
 
@@ -294,16 +327,21 @@ class CommerceList(RecordList):
 
 
 class SaleList(CommerceList):
-    _instance = None
-
     @classmethod
-    def instance(cls):
-        if not StockList._instance:
-            _instance = StockList()
-        return _instance
+    def new(cls):
+        records = [
+            [
+                SaleRecord(name, unit_price, stock, amount,
+                           final_price, percent, check)
+            ] for name, unit_price, stock, amount,
+                  final_price, percent, check in FileManager.load(path=JSON_SALES_PATH)
+        ]
+        return cls(records)
 
-    def __init__(self):
-        super().__init__(path=JSON_SALES_PATH, size=SALELIST_COLUMN_SIZE, pad=SALELIST_COLUMN_PAD)
+    def __init__(self, records: list):
+        super().__init__(records=records,
+                         size=SALELIST_COLUMN_SIZE,
+                         pad=SALELIST_COLUMN_PAD)
 
     def save_in_csv(self):
         FileManager.save_in_csv(path=CSV_SALES_PATH, data=self.get_csv_report())
@@ -312,7 +350,7 @@ class SaleList(CommerceList):
         FileManager.save_in_json(path=JSON_SALES_PATH, data=self.get_list_report())
 
     def sell(self):
-        if self.get_list_control():
+        if self.get_list_control_status():
             self.save_in_csv()
             StockList.instance().update_records_from_sale(self.get_commerce_report())
             self.remove_all_records()
@@ -320,18 +358,38 @@ class SaleList(CommerceList):
     def export(self, path: str):
         os.system(f'cp {CSV_SALES_PATH} {path}')
 
+    def add_records(self, records: list):
+        actual_records = self.get_list_report()
+        name_records = [
+            rc[0] for rc in actual_records
+        ]
+        for rc in records:
+            try:
+                index = name_records.index(rc[0])
+                actual_record = actual_records[index]
+                actual_record[1] = rc[1]
+                actual_record[2] = rc[2]
+            except:
+                actual_records.append(rc)
+        FileManager.save_in_json(path=JSON_SALES_PATH, data=actual_records)
+
 
 class BuyList(CommerceList):
-    _instance = None
-
     @classmethod
-    def instance(cls):
-        if not StockList._instance:
-            _instance = StockList()
-        return _instance
+    def new(cls):
+        records = [
+            [
+                BuyRecord(name, unit_price, stock, amount,
+                           final_price, supplier, percent, check)
+            ] for name, unit_price, stock, amount,
+                  final_price, supplier, percent, check in FileManager.load(path=JSON_BUYS_PATH)
+        ]
+        return cls(records)
 
-    def __init__(self):
-        super().__init__(path=JSON_BUYS_PATH, size=BUYLIST_COLUMN_SIZE, pad=BUYLIST_COLUMN_PAD)
+    def __init__(self, records: list):
+        super().__init__(records=records,
+                         size=BUYLIST_COLUMN_SIZE,
+                         pad=BUYLIST_COLUMN_PAD)
 
     def save_in_csv(self):
         FileManager.save_in_csv(path=CSV_BUYS_PATH, data=self.get_csv_report())
@@ -340,7 +398,7 @@ class BuyList(CommerceList):
         FileManager.save_in_json(path=JSON_BUYS_PATH, data=self.get_list_report())
 
     def buy(self):
-        if self.get_list_control():
+        if self.get_list_control_status():
             self.save_in_csv()
             StockList.instance().update_records_from_buy(self.get_commerce_report())
             self.remove_all_records()
@@ -361,22 +419,38 @@ class BuyList(CommerceList):
         for rc in StockList.instance().collect_unit_prices_from_records(self.get_record_names()):
             self.get_record(rc[0]).update_unit_price(rc[1])
 
+    def add_records(self, how_many_add: int):
+        records = FileManager.load(path=JSON_BUYS_PATH)
+        for _ in range(how_many_add):
+            records.append(BuyRecord.get_empty_report())
+        FileManager.save_in_json(path=JSON_BUYS_PATH, data=records)
+
 
 class Test:
     def __init__(self):
         FileManager.db_control()
         layout = [
             [
-                Button(button_text='test_add_records', border_width=BUTTON_BORDER_WIDTH)
+                Button(button_text='test_add_records', border_width=BUTTON_BORDER_WIDTH),
+                Button(button_text='test_sell_records', border_width=BUTTON_BORDER_WIDTH),
+                Button(button_text='test_stock_control', border_width=BUTTON_BORDER_WIDTH),
             ], [
-                StockList.instance()
+                StockList.instance(),
+                SaleList.instance(),
+                BuyList.instance()
             ]
         ]
-        self.win = Window(title='test', layout=layout, finalize=True)
-        self.lt = layout[-1][0]
+        self.win = Window(title='test', layout=layout,
+                          enable_close_attempted_event=True)
+        self.lt = layout[-1]
         self.run()
 
+    def save(self):
+        for lt in self.lt:
+            lt.save_in_json()
+
     def close(self, timeout=0):
+        self.save()
         self.win.read(timeout=timeout, close=True)
         exit()
 
@@ -384,26 +458,39 @@ class Test:
         Process(target=FileManager.restart, args=(self.win.current_location(), )).start()
         self.close(1000)
 
+    def test_stock_control(self):
+        self.lt[0].stock_control()
+
+    def test_sell_records(self):
+        if self.lt[0].sell_records():
+            self.restart()
+
     def test_add_records(self):
-        self.lt.add_records(3)
-        # self.lt.save_in_json()
+        self.lt[0].add_records(2)
+        self.lt[2].add_records(2)
         self.restart()
 
     def test_rows(self):
         print()
-        print('TEST_ROWS')
-        print(self.lt.Rows)
+        print('TEST_STOCK_ROWS')
+        print(self.lt[0].Rows)
+        print()
+        print('TEST_SALES_ROWS')
+        print(self.lt[1].Rows)
+        print()
+        print('TEST_BUYS_ROWS')
+        print(self.lt[2].Rows)
         print()
 
     def run(self):
         self.test_rows()
         while True:
             e, _ = self.win.read()
-            if e == None:
-                self.win.close()
+            if e == '-WINDOW CLOSE ATTEMPTED-':
+                self.close()
                 break
             getattr(self, e)()
 
 if __name__ == '__main__':
-    theme('Default1')
+    theme('PapelerAbasto')
     Test()

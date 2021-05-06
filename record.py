@@ -114,6 +114,7 @@ class Record(Column):
             field.get() for field in self.Rows[0]
         ]
 
+    #me parece que hay que sacarlo
     def get_default_report(self):
         """
         Valores predeterminados de cada campo (con los que fueron creados)\n
@@ -148,13 +149,13 @@ class Record(Column):
             return error
         return -1
 
-    def indicate_error(self, index: int):
+    def indicate_issue(self, index: int, color: str='Red'):
         """
         Actualiza el estado del campo indicado hacia error
         """
-        self.Rows[0][index].update(background_color='Red')
+        self.Rows[0][index].update(background_color=color)
 
-    def solve_error(self):
+    def solve_issue(self):
         """
         Actualiza el estado de cada campo hacia resuelto
         """
@@ -224,6 +225,34 @@ class StockRecord(Record):
 
     def uncheck(self):
         self.Rows[0][-1].update(False)
+
+    def get_sale_report(self):
+        """
+        :return: List[Fields]
+        """
+        sale_report = [
+            field.get() for field in self.Rows[0][:-2]
+        ]
+        sale_report += [
+            0, 0, 0, True
+        ]
+        return sale_report
+
+    def have_stock(self):
+        return self.get_stock() > 0
+
+    def get_sale_control_status(self):
+        """
+        :return: Boolean
+        """
+        error = self.get_error_status()
+        if error > -1:
+            self.indicate_issue(error)
+            return False
+        if not self.have_stock():
+            self.indicate_issue(2)
+            return False
+        return True
 
 
 class CommerceRecord(Record):
@@ -312,6 +341,13 @@ class SaleRecord(CommerceRecord):
 
 
 class BuyRecord(CommerceRecord):
+    @classmethod
+    def get_empty_report(cls):
+        """
+        :return: List[Fields]
+        """
+        return ['', 0, 0, 0, 0, '', 0, True]
+
     def __init__(self, name: str='',
                  unit_price: float=0.,
                  stock: int=0,
@@ -466,9 +502,9 @@ class Test:
         error = self.lt.get_error_status()
         print('Error en: ', error)
         if error > -1:
-            self.lt.indicate_error(error)
+            self.lt.indicate_issue(error)
         else:
-            self.lt.solve_error()
+            self.lt.solve_issue()
         print()
 
     def run(self):
