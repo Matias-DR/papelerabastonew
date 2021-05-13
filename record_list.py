@@ -1,19 +1,26 @@
-from record import (
-    Record, StockRecord, SaleRecord, BuyRecord
-)
-from PySimpleGUI import (
-    theme, Window, Column, Button
-)
+from record import Record, StockRecord, SaleRecord, BuyRecord
+from PySimpleGUI import theme, Window, Column, Button
 from constants import (
-    JSON_STOCK_PATH, JSON_SALES_PATH, JSON_BUYS_PATH, CSV_SALES_PATH, CSV_BUYS_PATH, JSON_PATHS,
-    RECORDLIST_COLUMN_SIZE, RECORDLIST_COLUMN_PAD, SALELIST_COLUMN_SIZE, SALELIST_COLUMN_PAD,
-    BUYLIST_COLUMN_SIZE, BUYLIST_COLUMN_PAD, BUTTON_BORDER_WIDTH, DATE, TIME, CSV_SALES_HEADER,
-    CSV_BUYS_HEADER
+    JSON_STOCK_PATH,
+    JSON_SALES_PATH,
+    JSON_BUYS_PATH,
+    CSV_SALES_PATH,
+    CSV_BUYS_PATH,
+    JSON_PATHS,
+    RECORDLIST_COLUMN_SIZE,
+    RECORDLIST_COLUMN_PAD,
+    SALELIST_COLUMN_SIZE,
+    SALELIST_COLUMN_PAD,
+    BUYLIST_COLUMN_SIZE,
+    BUYLIST_COLUMN_PAD,
+    DATE,
+    TIME,
+    CSV_STOCK_HEADER,
+    CSV_SALES_HEADER,
+    CSV_BUYS_HEADER,
+    CSV_HEADER,
 )
-import constants as ct
-from json import (
-    load, dump
-)
+from json import load, dump
 from csv import writer
 import os
 from multiprocessing import Process
@@ -23,30 +30,30 @@ from sys import platform
 class FileManager:
     @staticmethod
     def restart(location=(20, 20)):
-        if platform == 'win32':
-            os.system('python record_list.py')
+        if platform == "win32":
+            os.system("python record_list.py")
         else:
-            os.system(f'python3 record_list.py {location[0]} {location[1]}')
+            os.system(f"python3 record_list.py {location[0]} {location[1]}")
 
     @staticmethod
     def create_json_files():
         for path in JSON_PATHS:
-            with open(path, 'w') as file:
+            with open(path, "w") as file:
                 dump([], file)
 
     @staticmethod
     def create_csv_files():
-        FileManager.save_in_csv(path=CSV_SALES_PATH,
-                                data=CSV_SALES_HEADER,
-                                mode='w')
-        FileManager.save_in_csv(path=CSV_BUYS_PATH,
-                                data=CSV_BUYS_HEADER,
-                                mode='w')
+        FileManager.save_in_csv(
+            path=CSV_SALES_PATH, data=CSV_SALES_HEADER, mode="w"
+        )
+        FileManager.save_in_csv(
+            path=CSV_BUYS_PATH, data=CSV_BUYS_HEADER, mode="w"
+        )
 
     @staticmethod
     def db_control():
-        if not os.path.isdir('./db'):
-            os.mkdir('./db')
+        if not os.path.isdir("./db"):
+            os.mkdir("./db")
             FileManager.create_json_files()
             FileManager.create_csv_files()
 
@@ -57,22 +64,21 @@ class FileManager:
 
     @staticmethod
     def save_in_json(path: str, data):
-        print('llegan', data)
-        with open(path, 'w') as file:
+        with open(path, "w") as file:
             dump(data, file, indent=4)
 
     @staticmethod
-    def save_in_csv(path: str, data: list, mode: str='a'):
-        with open(path, mode, newline='') as f:
-            wr = writer(f, delimiter=',', )
+    def save_in_csv(path: str, data: list, mode: str = "a"):
+        with open(path, mode, newline="") as f:
+            wr = writer(
+                f,
+                delimiter=",",
+            )
             for line in data:
                 wr.writerow(line)
 
 
 class RecordList(Column):
-    """
-    Superclase que define elementos predeterminados para toda lista de registros
-    """
     _instance = None
 
     @classmethod
@@ -82,110 +88,104 @@ class RecordList(Column):
         return cls._instance
 
     def __init__(self, records: list, size: tuple, pad=tuple):
-        super().__init__(layout=records,
-                         size=size,
-                         pad=pad,
-                         scrollable=True,
-                         vertical_scroll_only=True)
+        super().__init__(
+            layout=records,
+            size=size,
+            pad=pad,
+            scrollable=True,
+            vertical_scroll_only=True,
+        )
+        self.len = len(records)
 
-    def report(self):
-        """
-        :return: List[List[]]
-        """
-        return [
-            rc[0].report() for rc in self.Rows
-        ]
+    def _get_records(self) -> tuple[Record]:
+        return tuple(map(lambda rc: rc[0], self.Rows))
 
-    def search(self, name: str):
-        """
-        Indica el índice del registro existente, -1 en caso de no existir\n
-        :return: int
-        """
-        for i, rc in enumerate(self.Rows):
-            if rc[0].get_name().upper() == name.upper():
-                return i
-        return -1
-
-    def get_record(self, name: str):
-        """
-        Devuelve el registro si existe, o unvalor nulo si no existe\n
-        :return: Record
-        """
-        try:
-            return self.Rows[self.search(name)][0]
-        except:
-            return None
-
-    def remove_checked_records(self):
-        for rc in reversed(self.Rows):
-            if rc[0].is_checked():
-                self.Rows.remove(rc)
-
-    def update_from_report(self, report: list):
-        for i, rc in enumerate(self.Rows):
-            rc[0].update_from_report(report[i])
-
-    def sort_list_min_max(self, field: int):
-        self.update_from_report(sorted(self.report(), key=lambda rc: rc[field]))
-
-    def sort_list_max_min(self, field: int):
-        self.update_from_report(sorted(self.report(), key=lambda rc: rc[field], reverse=True))
-
-    def get_list_report(self):
-        """
-        :return: List[List[Fields]]
-        """
-        return [
-            rc[0].get_report() for rc in self.Rows
-        ]
-
-    def get_checked_records(self):
-        """
-        :return: List[Record]
-        """
-        checked_records = []
-        for rc in self.Rows:
-            if rc[0].is_checked():
-                checked_records.append(rc[0])
-        return checked_records
-
-    def have_checked_records(self):
-        """
-        :return: Boolean
-        """
-        for rc in self.Rows:
-            if rc[0].is_checked():
+    def _have_checked_records(self) -> bool:
+        for rc in self._get_records():
+            if rc.get_check():
                 return True
         return False
 
-    def get_list_control_status(self):
-        """
-        Indica el error dentro de los registros seleccionados\n
-        :return: Boolean
-        """
-        if self.have_checked_records():
-            self.solve_issues()
+    def _update_from_report(self, report: tuple):
+        for i, rc in enumerate(self._get_records()):
+            rc.update_from_report(report[i])
+
+    def get_records_len(self) -> int:
+        return self.len
+
+    def get_report(self) -> list[list]:
+        return list(map(lambda rc: rc.get_report(), self._get_records()))
+
+    def get_checked_records(self) -> tuple[Record]:
+        return tuple(filter(lambda rc: rc.get_check(), self._get_records()))
+
+    def get_record(self, name: str) -> Record:
+        for rc in self._get_records():
+            if rc.get_name().upper() == name.upper():
+                return rc
+        return None
+
+    def get_record_names(self) -> list[str]:
+        record_names = []
+        for rc in self._get_records():
+            name = rc.get_name()
+            if name:
+                record_names.append(name)
+        return record_names
+
+    def passes_control(self) -> bool:
+        if self._have_checked_records():
+            self.clear_issues()
             for rc in self.get_checked_records():
-                error = rc.get_error_status()
-                if error > -1:
-                    rc.indicate_issue(error)
+                if not rc.passes_control():
                     return False
             return True
         return False
 
-    def solve_issues(self):
-        for rc in self.Rows:
-            rc[0].solve_issue()
+    def sort_list_min_max(self, field: int):
+        self._update_from_report(
+            sorted(self.get_report(), key=lambda rc: rc[field])
+        )
+
+    def sort_list_max_min(self, field: int):
+        self._update_from_report(
+            sorted(self.get_report(), key=lambda rc: rc[field], reverse=True)
+        )
+
+    def uncheck_records(self):
+        for rc in self.get_checked_records():
+            rc.uncheck()
+
+    def remove_checked_records(self) -> bool:
+        if self._have_checked_records():
+            for rc in reversed(self.Rows):
+                if rc[0].get_check():
+                    self.Rows.remove(rc)
+            print(self.Rows)
+            self.save_in_json()
+            return True
+        return False
+
+    def clear_issues(self):
+        for rc in self._get_records():
+            rc.clear_issues()
+
+    def check_all(self):
+        for rc in self._get_records():
+            rc.check()
+
+    def save_in_json(self):
+        report = self.get_report()
+        self.len = len(self.get_report())
+        FileManager.save_in_json(self.get_json_path(), report)
 
 
 class StockAndBuyList:
-    def __init__(self):
-        pass
-
-    def have_empty_records(self):
-        for rc in reversed(self.Rows):
-            if rc[0].is_empty():
+    def have_empty_records(self) -> bool:
+        for rc in reversed(self._get_records()):
+            if rc.is_empty():
                 return True
+        return False
 
     def remove_empty_records(self):
         if self.have_empty_records():
@@ -193,154 +193,250 @@ class StockAndBuyList:
                 if rc[0].is_empty():
                     self.Rows.remove(rc)
             self.save_in_json()
-            return True
-        return False
+
+    def add_records(self, how_many_add: int):
+        self.len += how_many_add
+        report = self.get_report()
+        for _ in range(how_many_add):
+            report.append(self.get_class_record().get_empty_report())
+        FileManager.save_in_json(path=self.get_json_path(), data=report)
 
 
 class StockList(RecordList, StockAndBuyList):
     @classmethod
     def new(cls):
         records = [
-            [
-                StockRecord(name, unit_price, stock, percent, check)
-            ] for name, unit_price, stock, percent, check in FileManager.load(path=JSON_STOCK_PATH)
+            [StockRecord(name, unit_price, stock, percent, check)]
+            for name, unit_price, stock, percent, check in
+            FileManager.load(path=JSON_STOCK_PATH)
         ]
         return cls(records)
 
     def __init__(self, records: list):
-        RecordList.__init__(self, records=records,
-                            size=RECORDLIST_COLUMN_SIZE,
-                            pad=RECORDLIST_COLUMN_PAD)
+        RecordList.__init__(
+            self,
+            records=records,
+            size=RECORDLIST_COLUMN_SIZE,
+            pad=RECORDLIST_COLUMN_PAD,
+        )
         StockAndBuyList.__init__(self)
 
-    def stock_control(self):
-        self.solve_issues()
-        for rc in self.Rows:
-            if not rc[0].have_stock():
-                rc[0].indicate_issue(index=2, color='Orange')
+    def get_json_path(self) -> str:
+        return JSON_STOCK_PATH
 
-    def get_records_to_apply_percent(self):
-        """
-        :return: List[List[]]
-        """
-        return filter(lambda record: record[0].have_percent_to_apply(), self.Rows)
+    def get_csv_report(self) -> list[list]:
+        return CSV_STOCK_HEADER + list(
+            map(lambda rc: rc.get_csv_report(), self._get_records())
+        )
 
-    def apply_percent_to_records(self):
-        for rc in self.get_records_to_apply_percent():
-            rc[0].apply_percent()
+    def get_class_record(self) -> Record:
+        return StockRecord
 
-    # REGACTOR
-    def add_record_from_buy(self, name: str, unit_price: float, stock: int):
-        pass
-        # self.add_record(StockRecord(name=name, unit_price=unit_price, stock=stock))
-
-    def update_records_from_buy(self, records: list):
-        for rc in records:
-            existent_record = self.get_record(rc[0])
-            if existent_record:
-                existent_record.update_from_buy(rc[1], rc[2])
-            else:
-                self.add_record_from_buy(rc[0], rc[1], [2])
-
-    def update_records_from_sale(self, records: list):
-        for rc in records:
-            self.get_record(rc[0]).update_from_sale(rc[1])
-
-    def collect_unit_prices_from_records(self, names: list):
-        """
-        :return: List[List[Fields]]
-        """
-        records = []
-        for name in names:
-            rc = self.get_record(name)
-            if rc:
-                _rc = [
-                    name, rc.get_unit_price()
-                ]
-                records.append(_rc)
-        return records
-
-    def save_in_json(self):
-        FileManager.save_in_json(JSON_STOCK_PATH, self.get_list_report())
-
-    def export(self, path: str):
-        csv_report = [
-            [
-                'DÍA', 'HORA', 'NOMBRE', 'PRECIO POR UNIDAD', 'STOCK'
-            ]
-        ]
-        csv_report += self.get_list_report()
-        FileManager.save_in_csv(path=path, data=csv_report, mode='w')
-
-    def get_sale_control_status(self):
-        """
-        :return: Boolean
-        """
-        if self.have_checked_records():
-            self.solve_issues()
+    def passes_pre_sale_control(self) -> bool:
+        if self._have_checked_records():
+            self.clear_issues()
             for rc in self.get_checked_records():
-                if not rc.get_sale_control_status():
+                if not rc.passes_pre_sale_control():
                     return False
-            return True
-
-    def sell_records(self):
-        """
-        :return: Boolean
-        """
-        if self.get_sale_control_status():
-            report = [
-                rc.get_sale_report() for rc in self.get_checked_records()
-            ]
-            SaleList.instance().add_records(report)
             return True
         return False
 
-    def add_records(self, how_many_add: int):
-        records = self.get_list_report()
-        for _ in range(how_many_add):
-            records.append(StockRecord.get_empty_report())
-        FileManager.save_in_json(path=JSON_STOCK_PATH, data=records)
+    def passes_pre_buy_control(self) -> bool:
+        if self._have_checked_records():
+            self.clear_issues()
+            for rc in self.get_checked_records():
+                if not rc.passes_pre_buy_control():
+                    return False
+            return True
+        return False
+
+    def passes_stock_control(self):
+        self.clear_issues()
+        for rc in self.get_checked_records():
+            rc.passes_stock_control()
+
+    def apply_percent_to_records(self):
+        self.clear_issues()
+        for rc in tuple(
+            filter(
+                lambda rc: rc.passes_apply_percent_control(),
+                self._get_records()
+            )
+        ):
+            rc.apply_percent()
+
+    def add_records_from_buys_report(self, buys_report: list):
+        self.len += len(buys_report)
+        FileManager.save_in_json(
+            JSON_STOCK_PATH,
+            self.get_report() + buys_report
+        )
+
+    def update_record_from_buy_report(self, buy_report: list) -> bool:
+        record = self.get_record(buy_report[0])
+        if record:
+            record.update_from_buy(buy_report[1], buy_report[2])
+            return False
+        return True
+
+    def complete_buy_report(self, buys_report: list):
+        for buy_report in buys_report:
+            buy_report += [0, False]
+
+    def receive_buys_report(self, buys_report: list):
+        filtered_buys_report = list(
+            filter(self.update_record_from_buy_report, buys_report)
+        )
+        if filtered_buys_report:
+            self.complete_buy_report(filtered_buys_report)
+            self.add_records_from_buys_report(filtered_buys_report)
+        else:
+            self.save_in_json()
+
+    def update_record_from_sale_report(self, sale_report: list):
+        self.get_record(sale_report[0]).update_from_sale(sale_report[1])
+
+    def receive_sales_report(self, sales_report: list):
+        for sale_report in sales_report:
+            self.update_record_from_sale_report(sale_report)
+        self.save_in_json()
+
+    def export(self, path: str):
+        FileManager.save_in_csv(path=path, data=self.get_csv_report(), mode="w")
+
+    def get_pre_commerce_report(self) -> list[list]:
+        return list(
+            map(
+                lambda rc: rc.get_pre_commerce_report(),
+                self.get_checked_records()
+            )
+        )
+
+    def pre_sell(self):
+        self.save_in_json()
+        if self.passes_pre_sale_control():
+            SaleList.instance().pre_commerce_from_report(
+                self.get_pre_commerce_report()
+            )
+
+    def pre_buy(self):
+        self.save_in_json()
+        if self.passes_pre_buy_control():
+            BuyList.instance().pre_commerce_from_report(
+                self.get_pre_commerce_report()
+            )
+
+    def secure_mode(self):
+        StockRecord.change_secure_mode()
+        for rc in self._get_records():
+            rc.secure_mode()
+
+    def have_record(self, name: str) -> bool:
+        if self.get_record(name):
+            return True
+        return False
+
+    def collect_unit_price_from_record_name(self, name: str) -> tuple:
+        return (name, self.get_record(name).get_unit_price())
+
+    def collect_unit_price_from_record_names(self, names: tuple) -> tuple:
+        return tuple(
+            map(
+                self.collect_unit_price_from_record_name,
+                list(set(self.get_record_names()).intersection(set(names)))
+            )
+        )
+
+    def passes_buy_control(self, record_names: tuple) -> bool:
+        self.clear_issues()
+        for record_name in record_names:
+            record = self.get_record(record_name)
+            if record:
+                if record.passes_control():
+                    return True
+                else:
+                    return False
+        return True
+
+    def passes_sale_control(self, record_names: tuple) -> bool:
+        self.clear_issues()
+        for record_name in record_names:
+            record = self.get_record(record_name)
+            if record:
+                if record.passes_control():
+                    if not record.have_stock():
+                        record.indicate_issue(2)
+                        return False
+                    return True
+                else:
+                    return False
         return True
 
 
 class CommerceList(RecordList):
     def __init__(self, records: list, size: tuple, pad: tuple):
-        super().__init__(records=records,
-                         size=size,
-                         pad=pad)
+        super().__init__(records=records, size=size, pad=pad)
 
-    def remove_all_records(self):
+    def _remove_all_records(self):
+        self.len = 0
         self.Rows = []
 
-    def get_csv_report(self):
-        """
-        :return: List[List[]]
-        """
-        csv_report = [
-            [
-                DATE(), TIME()
-            ]
-        ]
-        for rc in self.Rows:
-            csv_report += rc[0].get_csv_report()
-        return csv_report
+    def get_sale_report(self) -> list:
+        return list(map(lambda rc: (rc.get_sale_report()), self._get_records()))
 
-    def calculate_final_price(self):
-        """
-        :return: Float
-        """
-        final_price = 0
-        for rc in self.Rows:
-            final_price += rc[0].apply_final_price()
-        return final_price
+    def get_buy_report(self) -> list:
+        return list(map(lambda rc: (rc.get_buy_report()), self._get_records()))
 
-    def get_commerce_report(self):
-        """
-        :return: List[Fields]
-        """
-        buy_report = []
-        for rc in self.Rows:
-            buy_report.append(rc[0].get_name(), rc[0].get_amount())
+    def get_csv_report(self) -> list[list]:
+        return CSV_HEADER + list(
+            map(lambda rc: rc.get_csv_report(), self._get_records())
+        )
+
+    def apply_final_price(self) -> float:
+        return sum(
+            tuple(map(lambda rc: rc.apply_final_price(), self._get_records()))
+        )
+
+    def save_in_csv(self):
+        FileManager.save_in_csv(
+            path=self.get_csv_path(), data=self.get_csv_report()
+        )
+
+    def export(self, path: str):
+        if platform == 'win32':
+            __import__('subprocess').call(
+                f'C:\Windows\WinSxS\wow64_microsoft-windows-powershell-exe_31bf3856ad364e35_10.0.19041.546_none_5163f0069562aff6\powershell.exe cp {self.get_csv_path()} {path}',
+                shell=True
+            )
+        else:
+            os.system(f'cp {self.get_csv_path()} {path}')
+
+    def update_existent_record(self, report: tuple) -> bool:
+        existent_record = self.get_record(report[0])
+        if existent_record:
+            existent_record.update_from_report(report)
+            return False
+        return True
+
+    def pre_commerce_from_report(self, report: tuple):
+        filtered_report = list(filter(self.update_existent_record, report))
+        if filtered_report:
+            self.len += len(filtered_report)
+            self.complete_pre_sell_report(filtered_report)
+            FileManager.save_in_json(
+                path=self.get_json_path(),
+                data=filtered_report + self.get_report()
+            )
+
+    def passes_have_amount_control(self) -> bool:
+        for rc in self.get_checked_records():
+            if not rc.get_amount() > 0:
+                rc.indicate_issue(3)
+                return False
+        return True
+
+    def get_checked_record_names(self) -> tuple[str]:
+        return tuple(map(lambda rc: rc.get_name(), self.get_checked_records()))
 
 
 class SaleList(CommerceList):
@@ -348,47 +444,59 @@ class SaleList(CommerceList):
     def new(cls):
         records = [
             [
-                SaleRecord(name, unit_price, stock, amount,
-                           final_price, percent, check)
-            ] for name, unit_price, stock, amount,
-                  final_price, percent, check in FileManager.load(path=JSON_SALES_PATH)
+                SaleRecord(
+                    name, unit_price, stock, amount, final_price, percent, check
+                )
+            ] for name, unit_price, stock, amount, final_price, percent, check
+            in FileManager.load(path=JSON_SALES_PATH)
         ]
         return cls(records)
 
     def __init__(self, records: list):
-        super().__init__(records=records,
-                         size=SALELIST_COLUMN_SIZE,
-                         pad=SALELIST_COLUMN_PAD)
+        super().__init__(
+            records=records, size=SALELIST_COLUMN_SIZE, pad=SALELIST_COLUMN_PAD
+        )
 
-    def save_in_csv(self):
-        FileManager.save_in_csv(path=CSV_SALES_PATH, data=self.get_csv_report())
+    def get_csv_path(self):
+        return CSV_SALES_PATH
 
-    def save_in_json(self):
-        FileManager.save_in_json(path=JSON_SALES_PATH, data=self.get_list_report())
+    def get_json_path(self):
+        return JSON_SALES_PATH
 
-    def sell(self):
-        if self.get_list_control_status():
-            self.save_in_csv()
-            StockList.instance().update_records_from_sale(self.get_commerce_report())
-            self.remove_all_records()
+    def get_sale_report(self) -> tuple[tuple]:
+        return tuple(map(lambda rc: rc.get_sale_report(), self._get_records()))
 
-    def export(self, path: str):
-        os.system(f'cp {CSV_SALES_PATH} {path}')
+    def upload_commerce_report(self):
+        StockList.instance().receive_sales_report(self.get_sale_report())
 
-    def add_records(self, records: list):
-        actual_records = self.get_list_report()
-        name_records = [
-            rc[0] for rc in actual_records
-        ]
-        for rc in records:
-            try:
-                index = name_records.index(rc[0])
-                actual_record = actual_records[index]
-                actual_record[1] = rc[1]
-                actual_record[2] = rc[2]
-            except:
-                actual_records.append(rc)
-        FileManager.save_in_json(path=JSON_SALES_PATH, data=actual_records)
+    def records_existence_control(self) -> bool:
+        for rc in self.get_checked_records():
+            if not StockList.instance().have_record(rc.get_name()):
+                rc.indicate_issue(0)
+                return False
+        return True
+
+    def passes_control(self) -> bool:
+        self.clear_issues()
+        if super().passes_control():
+            if self.records_existence_control():
+                return True
+        return False
+
+    def complete_pre_sell_report(self, pre_sell_report: list):
+        for report in pre_sell_report:
+            report += [0, 0, 0, False]
+
+    def sell_records(self):
+        if self.passes_control():
+            if self.passes_have_amount_control():
+                if StockList.instance().passes_sale_control(
+                    self.get_checked_record_names()
+                ):
+                    self.upload_commerce_report()
+                    self.save_in_csv()
+                    self.remove_checked_records()
+                    self.save_in_json()
 
 
 class BuyList(CommerceList, StockAndBuyList):
@@ -396,135 +504,62 @@ class BuyList(CommerceList, StockAndBuyList):
     def new(cls):
         records = [
             [
-                BuyRecord(name, unit_price, stock, amount,
-                           final_price, supplier, percent, check)
-            ] for name, unit_price, stock, amount,
-                  final_price, supplier, percent, check in FileManager.load(path=JSON_BUYS_PATH)
+                BuyRecord(
+                    name,
+                    unit_price,
+                    stock,
+                    amount,
+                    final_price,
+                    supplier,
+                    percent,
+                    check,
+                )
+            ] for name, unit_price, stock, amount, final_price, supplier,
+            percent, check in FileManager.load(path=JSON_BUYS_PATH)
         ]
         return cls(records)
 
     def __init__(self, records: list):
-        CommerceList.__init__(self, records=records,
-                              size=BUYLIST_COLUMN_SIZE,
-                              pad=BUYLIST_COLUMN_PAD)
+        CommerceList.__init__(
+            self,
+            records=records,
+            size=BUYLIST_COLUMN_SIZE,
+            pad=BUYLIST_COLUMN_PAD
+        )
         StockAndBuyList.__init__(self)
 
-    def save_in_csv(self):
-        FileManager.save_in_csv(path=CSV_BUYS_PATH, data=self.get_csv_report())
+    def get_buy_report(self) -> list[list]:
+        return tuple(map(lambda rc: rc.get_buy_report(), self._get_records()))
 
-    def save_in_json(self):
-        FileManager.save_in_json(path=JSON_BUYS_PATH, data=self.get_list_report())
+    def get_class_record(self) -> Record:
+        return BuyRecord
 
-    def buy(self):
-        if self.get_list_control_status():
-            self.save_in_csv()
-            StockList.instance().update_records_from_buy(self.get_commerce_report())
-            self.remove_all_records()
+    def get_csv_path(self) -> str:
+        return CSV_BUYS_PATH
 
-    def export(self, path: str):
-        os.system(f'cp {CSV_BUYS_PATH} {path}')
+    def get_json_path(self) -> str:
+        return JSON_BUYS_PATH
 
-    def get_record_names(self):
-        """
-        :return: List[String]
-        """
-        names = []
-        for rc in self.Rows:
-            names.append(rc[0].get_name())
-        return names
+    def upload_commerce_report(self):
+        StockList.instance().receive_buys_report(self.get_buy_report())
 
     def collect_unit_prices(self):
-        for rc in StockList.instance().collect_unit_prices_from_records(self.get_record_names()):
+        for rc in StockList.instance().collect_unit_price_from_record_names(
+            self.get_record_names()
+        ):
             self.get_record(rc[0]).update_unit_price(rc[1])
 
-    def add_records(self, how_many_add: int):
-        records = self.get_list_report()
-        for _ in range(how_many_add):
-            records.append(BuyRecord.get_empty_report())
-        FileManager.save_in_json(path=JSON_BUYS_PATH, data=records)
-        return True
+    def complete_pre_sell_report(self, pre_sell_report: list):
+        for report in pre_sell_report:
+            report += [0, 0, '', 0, False]
 
-
-class Test:
-    def __init__(self):
-        FileManager.db_control()
-        layout = [
-            [
-                Button(button_text='test_add_records', border_width=BUTTON_BORDER_WIDTH),
-                Button(button_text='test_sell_records', border_width=BUTTON_BORDER_WIDTH),
-                Button(button_text='test_stock_control', border_width=BUTTON_BORDER_WIDTH),
-                Button(button_text='test_remove_empty_records', border_width=BUTTON_BORDER_WIDTH),
-                Button(button_text='test_instance', border_width=BUTTON_BORDER_WIDTH),
-            ], [
-                StockList.instance(),
-                SaleList.instance(),
-                BuyList.instance()
-            ]
-        ]
-        self.win = Window(title='test', layout=layout,
-                          enable_close_attempted_event=True)
-        self.lt = layout[-1]
-        self.run()
-
-    def save(self):
-        for lt in self.lt:
-            lt.save_in_json()
-
-    def close(self, timeout=0):
-        self.win.read(timeout=timeout, close=True)
-        exit()
-
-    def restart(self):
-        Process(target=FileManager.restart, args=(self.win.current_location(), )).start()
-        self.close(1000)
-
-    def test_stock_control(self):
-        self.lt[0].stock_control()
-
-    def test_sell_records(self):
-        return self.lt[0].sell_records()
-
-    def test_add_records(self):
-        self.lt[0].add_records(2)
-        if self.lt[2].add_records(2):
-            return True
-
-    def test_rows(self):
-        print()
-        print('TEST_STOCK_ROWS')
-        print(self.lt[0].Rows)
-        print()
-        print('TEST_SALES_ROWS')
-        print(self.lt[1].Rows)
-        print()
-        print('TEST_BUYS_ROWS')
-        print(self.lt[2].Rows)
-        print()
-
-    def test_remove_empty_records(self):
-        if self.lt[0].remove_empty_records() or self.lt[2].remove_empty_records():
-            return True
-        return False
-
-    def test_instance(self):
-        print()
-        print('TEST_INSTANCE')
-        print(self.lt[0] == StockList.instance())
-        print(self.lt[1] == SaleList.instance())
-        print(self.lt[2] == BuyList.instance())
-        print()
-
-    def run(self):
-        self.test_rows()
-        while True:
-            e, _ = self.win.read()
-            if e == '-WINDOW CLOSE ATTEMPTED-':
-                self.save()
-                self.close()
-                break
-            if getattr(self, e)():
-                self.restart()
-
-if __name__ == '__main__':
-    theme('PapelerAbasto')
-    Test()
+    def buy_records(self):
+        if self.passes_control():
+            if self.passes_have_amount_control():
+                if StockList.instance().passes_buy_control(
+                    self.get_checked_record_names()
+                ):
+                    self.upload_commerce_report()
+                    self.save_in_csv()
+                    self.remove_checked_records()
+                    self.save_in_json()

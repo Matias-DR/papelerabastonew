@@ -4,7 +4,6 @@ import PySimpleGUI as ps
 import domain as dm
 from multiprocessing import Process
 
-
 theme = ct.THEME
 ps.theme(theme)
 
@@ -12,9 +11,13 @@ ps.theme(theme)
 class RecordAdderComponent:
     def __init__(self, key):
         self._layout = []
-        self._element_record_adder = ps.Spin(values=ct.SPIN_RECORD_ADDER_VALUES, initial_value=0,
-                                             size=ct.SIZES['xxxs'], key=key+',spin_add_records',
-                                             readonly=True)
+        self._element_record_adder = ps.Spin(
+            values=ct.SPIN_RECORD_ADDER_VALUES,
+            initial_value=0,
+            size=ct.SIZES['xxxs'],
+            key=key + ',spin_add_records',
+            readonly=True
+        )
         self.render_layout(key)
 
     def layout(self):
@@ -32,9 +35,15 @@ class RecordAdderComponent:
         '''
         layout = [
             self._element_record_adder,
-            ps.Button(button_text='➕', image_data=ct.IMAGE, font=ct.IMAGE_FONT,
-                      border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['add'],
-                      key=key+',add_records', image_size=ct.BTT_ASCII_IMAGE_SIZE)
+            ps.Button(
+                button_text='➕',
+                image_data=ct.IMAGE,
+                font=ct.IMAGE_FONT,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['add'],
+                key=key + ',add_records',
+                image_size=ct.BTT_ASCII_IMAGE_SIZE
+            )
         ]
         self._layout = layout
 
@@ -43,11 +52,22 @@ class TraderComponent:
     def __init__(self, key):
         self._key = key
         self._layout = []
-        self._element_total_price = ps.Text(text='0000.00', key=key+',total_price',
-                                            background_color='White', text_color='Black',
-                                            size=ct.TOTAL_PRICE_SIZE, pad=((0, 3), (3, 3)))
-        self._element_total_percent = ps.Spin(ct.SPIN_PERCENT_VALUES, initial_value=0, size=ct.SIZES['xxs'],
-                                              enable_events=True, readonly=True, k=key+',update_total_percent')
+        self._element_total_price = ps.Text(
+            text='0000.00',
+            key=key + ',total_price',
+            background_color='White',
+            text_color='Black',
+            size=ct.TOTAL_PRICE_SIZE,
+            pad=((0, 3), (3, 3))
+        )
+        self._element_total_percent = ps.Spin(
+            ct.SPIN_PERCENT_VALUES,
+            initial_value=0,
+            size=ct.SIZES['xxs'],
+            enable_events=True,
+            readonly=True,
+            k=key + ',update_total_percent'
+        )
         self.render_layout(key)
 
     def layout(self):
@@ -65,15 +85,31 @@ class TraderComponent:
         ]
         '''
         layout = [
-            ps.Button(button_text='X', image_data=ct.IMAGE, image_size=ct.BTT_ASCII_IMAGE_SIZE,
-                      border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['cancel_commerce'],
-                      key=self._key+',cancel_commerce', pad=ct.CART_CANCEL_PAD, font=ct.IMAGE_FONT),
-            ps.Button(button_text='$', image_data=ct.IMAGE, key=self._key+',accept_commerce',
-                      border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['accept_commerce'],
-                      image_size=ct.BTT_ASCII_IMAGE_SIZE, font=ct.IMAGE_FONT),
-            ps.Text(text='$', background_color='White', text_color='Black', pad=((3, 0), (3, 3))),
-            self._element_total_price,
-            self._element_total_percent
+            ps.Button(
+                button_text='X',
+                image_data=ct.IMAGE,
+                image_size=ct.BTT_ASCII_IMAGE_SIZE,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['cancel_commerce'],
+                key=self._key + ',cancel_commerce',
+                pad=ct.CART_CANCEL_PAD,
+                font=ct.IMAGE_FONT
+            ),
+            ps.Button(
+                button_text='$',
+                image_data=ct.IMAGE,
+                key=self._key + ',accept_commerce',
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['accept_commerce'],
+                image_size=ct.BTT_ASCII_IMAGE_SIZE,
+                font=ct.IMAGE_FONT
+            ),
+            ps.Text(
+                text='$',
+                background_color='White',
+                text_color='Black',
+                pad=((3, 0), (3, 3))
+            ), self._element_total_price, self._element_total_percent
         ]
         self._layout = layout
 
@@ -83,16 +119,22 @@ class OptionsComponent:
         self._key = key
         self._list_components = list_components
         self._layout = [[]]
-        self._element_export_options = ps.Combo(values=['STOCK', 'VENTAS', 'COMPRAS'], default_value='STOCK',
-                                                size=ct.SIZES['s'], key=self._key+',export_option', readonly=True,
-                                                pad=ct.FIRST_OPTION_PAD)
-        self._element_export_path = ps.Input(default_text=ct.EXPORT_PATH, size=ct.SIZES['xxl'],
-                                             readonly=True, key=self._key+',export_path')
+        self._element_export_options = ps.Combo(
+            values=['STOCK', 'VENTAS', 'COMPRAS'],
+            default_value='STOCK',
+            size=ct.SIZES['s'],
+            key=self._key + ',export_option',
+            readonly=True,
+            pad=ct.FIRST_OPTION_PAD
+        )
+        self._element_export_path = ps.Input(
+            default_text=ct.EXPORT_PATH,
+            size=ct.SIZES['xxl'],
+            readonly=True,
+            key=self._key + ',export_path'
+        )
         self.render_layout()
-        self._funcs = {
-            'export': self.export,
-            'change_theme': self.change_theme
-        }
+        self._funcs = {'export': self.export, 'change_theme': self.change_theme}
         self.render_content_on(layout)
 
     def render_content_on(self, layout):
@@ -104,26 +146,50 @@ class OptionsComponent:
         '''
         options = self._layout
         options[0] += [
-            ps.Button(button_text='', image_data=ct.PNG_TABLE, key=self._key+',report_view',
-                      image_size=ct.BTT_GENERAL_IMAGE_SIZE, border_width=ct.BTT_BORDER_WIDTH,
-                      tooltip=ct.BTT_TOOLTIPS['report_view']),
-            ps.Button(button_text='', image_data=ct.PNG_THEME_CHANGE(), key=self._key+',change_theme',
-                      image_size=ct.BTT_GENERAL_IMAGE_SIZE, border_width=ct.BTT_BORDER_WIDTH,
-                      tooltip=ct.BTT_TOOLTIPS['change_theme']),
-            ps.Button(button_text='', image_data=ct.PNG_EXIT, key='exit',
-                      image_size=ct.BTT_GENERAL_IMAGE_SIZE, border_width=ct.BTT_BORDER_WIDTH,
-                      tooltip=ct.BTT_TOOLTIPS['exit'])
+            ps.Button(
+                button_text='',
+                image_data=ct.PNG_TABLE,
+                key=self._key + ',report_view',
+                image_size=ct.BTT_GENERAL_IMAGE_SIZE,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['report_view']
+            ),
+            ps.Button(
+                button_text='',
+                image_data=ct.PNG_THEME_CHANGE(),
+                key=self._key + ',change_theme',
+                image_size=ct.BTT_GENERAL_IMAGE_SIZE,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['change_theme']
+            ),
+            ps.Button(
+                button_text='',
+                image_data=ct.PNG_EXIT,
+                key='exit',
+                image_size=ct.BTT_GENERAL_IMAGE_SIZE,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['exit']
+            )
         ]
         options_col = [
             [
-                ps.Column(layout=options, size=ct.OPTIONS_COL_SIZE, pad=(0, 0),
-                          element_justification='center')
+                ps.Column(
+                    layout=options,
+                    size=ct.OPTIONS_COL_SIZE,
+                    pad=(0, 0),
+                    element_justification='center'
+                )
             ]
         ]
         _layout = [
-            ps.Frame(title='↓ OPCIONES ↓', title_color=ct.FRAME_TITLE_COLOR[theme],
-                     layout=options_col, title_location='n', pad=ct.OPTIONS_FRAME_PAD,
-                     element_justification='center')
+            ps.Frame(
+                title='↓ OPCIONES ↓',
+                title_color=ct.FRAME_TITLE_COLOR[theme],
+                layout=options_col,
+                title_location='n',
+                pad=ct.OPTIONS_FRAME_PAD,
+                element_justification='center'
+            )
         ]
         layout.append(_layout)
 
@@ -144,22 +210,36 @@ class OptionsComponent:
         exporter = [
             [
                 self._element_export_options,
-                ps.FileSaveAs(button_text='', initial_folder=ct.EXPORT_PATH,
-                              target=(555666777, +2), tooltip=ct.BTT_TOOLTIPS['folder'],
-                              image_data=ct.PNG_FOLDER, image_size=ct.BTT_GENERAL_IMAGE_SIZE,
-                              file_types=(('', '.csv'), ), default_extension='.csv'),
-                self._element_export_path,
-                ps.Button(button_text='', image_data=ct.PNG_EXPORT, key=self._key+',export',
-                          border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['export'],
-                          image_size=ct.BTT_GENERAL_IMAGE_SIZE)
+                ps.FileSaveAs(
+                    button_text='',
+                    initial_folder=ct.EXPORT_PATH,
+                    target=(555666777, +2),
+                    tooltip=ct.BTT_TOOLTIPS['folder'],
+                    image_data=ct.PNG_FOLDER,
+                    image_size=ct.BTT_GENERAL_IMAGE_SIZE,
+                    file_types=(('', '.csv'), ),
+                    default_extension='.csv'
+                ), self._element_export_path,
+                ps.Button(
+                    button_text='',
+                    image_data=ct.PNG_EXPORT,
+                    key=self._key + ',export',
+                    border_width=ct.BTT_BORDER_WIDTH,
+                    tooltip=ct.BTT_TOOLTIPS['export'],
+                    image_size=ct.BTT_GENERAL_IMAGE_SIZE
+                )
             ]
         ]
         self._layout = exporter
 
     def export(self):
         {
-            'STOCK': self._list_components[0], 'VENTAS': self._list_components[1], 'COMPRAS': self._list_components[2]
-        }[self._element_export_options.get()].export(self._element_export_path.get())
+            'STOCK': self._list_components[0],
+            'VENTAS': self._list_components[1],
+            'COMPRAS': self._list_components[2]
+        }[self._element_export_options.get()].export(
+            self._element_export_path.get()
+        )
 
     def change_theme(self):
         ct.__restart__ = True
@@ -174,11 +254,20 @@ class SectionComponent:
     def __init__(self, key):
         self._key = key
         self._layout = [[]]
-        self._element_input_searcher = ps.Input(default_text='', key=self._key+',searcher',
-                                                size=ct.SIZES['l'], pad=ct.SEARCHER_PAD)
+        self._element_input_searcher = ps.Input(
+            default_text='',
+            key=self._key + ',searcher',
+            size=ct.SIZES['l'],
+            pad=ct.SEARCHER_PAD
+        )
         self._element_sort_options = 0
-        self._element_clean_options = ps.Combo(values=self._clean_options, default_value=self._clean_options[0],
-                                               size=ct.SIZES['+m'], key=self._key+',clean_options', readonly=True)
+        self._element_clean_options = ps.Combo(
+            values=self._clean_options,
+            default_value=self._clean_options[0],
+            size=ct.SIZES['+m'],
+            key=self._key + ',clean_options',
+            readonly=True
+        )
         self._funcs = {
             'search': self.search,
             'sort_min_max': self.sort_min_max,
@@ -198,28 +287,56 @@ class SectionComponent:
             [ INDEX_IN, INDEX_IN, INDEX_IN, APPLY_BTT ]
         ]
         '''
-        apply = ps.Button(button_text='✓', image_data=ct.IMAGE, pad=ct.APPLY_PAD, font=ct.IMAGE_FONT,
-                          border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['apply'],
-                          key=self._key+',apply', image_size=ct.BTT_ASCII_IMAGE_SIZE)
+        apply = ps.Button(
+            button_text='✓',
+            image_data=ct.IMAGE,
+            pad=ct.APPLY_PAD,
+            font=ct.IMAGE_FONT,
+            border_width=ct.BTT_BORDER_WIDTH,
+            tooltip=ct.BTT_TOOLTIPS['apply'],
+            key=self._key + ',apply',
+            image_size=ct.BTT_ASCII_IMAGE_SIZE
+        )
         self._layout[-1].append(apply)
 
-    def render_sorter(self, combo_size=ct.SIZES['s'], btt_size=ct.BTT_GENERAL_IMAGE_SIZE,
-                      btt_pad=ct.BTT_FIRST_SORT_PAD):
+    def render_sorter(
+        self,
+        combo_size=ct.SIZES['s'],
+        btt_size=ct.BTT_GENERAL_IMAGE_SIZE,
+        btt_pad=ct.BTT_FIRST_SORT_PAD
+    ):
         '''
         [
             [ SEARCH_IN, SEARCH_BTT, SORT_COMBO, SORT_BTT, SORT_BTT ]
         ]
         '''
-        self._element_sort_options = ps.Combo(values=self._sort_options, default_value=self._sort_options[0],
-                                              size=combo_size, key=self._key+',sort_options', readonly=True)
+        self._element_sort_options = ps.Combo(
+            values=self._sort_options,
+            default_value=self._sort_options[0],
+            size=combo_size,
+            key=self._key + ',sort_options',
+            readonly=True
+        )
         sorter = [
             self._element_sort_options,
-            ps.Button(button_text='', image_data=ct.PNG_SORT_MIN_TO_MAX, pad=btt_pad,
-                      border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['sort_min_max'],
-                      key=self._key+',sort_min_max', image_size=btt_size),
-            ps.Button(button_text='', image_data=ct.PNG_SORT_MAX_TO_MIN, pad=btt_pad,
-                      border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['sort_max_min'],
-                      key=self._key+',sort_max_min', image_size=btt_size)
+            ps.Button(
+                button_text='',
+                image_data=ct.PNG_SORT_MIN_TO_MAX,
+                pad=btt_pad,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['sort_min_max'],
+                key=self._key + ',sort_min_max',
+                image_size=btt_size
+            ),
+            ps.Button(
+                button_text='',
+                image_data=ct.PNG_SORT_MAX_TO_MIN,
+                pad=btt_pad,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['sort_max_min'],
+                key=self._key + ',sort_max_min',
+                image_size=btt_size
+            )
         ]
         self._layout[0] += sorter
 
@@ -242,9 +359,14 @@ class SectionComponent:
         '''
         searcher = [
             self._element_input_searcher,
-            ps.Button(button_text='', image_data=ct.PNG_SEARCH,
-                      border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['search'],
-                      key=self._key+',search', image_size=ct.BTT_GENERAL_IMAGE_SIZE)
+            ps.Button(
+                button_text='',
+                image_data=ct.PNG_SEARCH,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['search'],
+                key=self._key + ',search',
+                image_size=ct.BTT_GENERAL_IMAGE_SIZE
+            )
         ]
         self._layout[0] += searcher
 
@@ -256,32 +378,37 @@ class SectionComponent:
         ]
         '''
         index = [
-            ps.Input(default_text='Nombre', size=ct.SIZES['l'],
-                     pad=ct.FIRST_INDEX_INPUT_PAD, readonly=True),
-            ps.Input(default_text='$ P/U', size=ct.SIZES['+s'],
-                     pad=ct.MID_INDEX_INPUT_PAD, readonly=True)
+            ps.Input(
+                default_text='Nombre',
+                size=ct.SIZES['l'],
+                pad=ct.FIRST_INDEX_INPUT_PAD,
+                readonly=True
+            ),
+            ps.Input(
+                default_text='$ P/U',
+                size=ct.SIZES['+s'],
+                pad=ct.MID_INDEX_INPUT_PAD,
+                readonly=True
+            )
         ]
         self._layout.append(index)
 
     def record_col(self, fields):
-        name = [
-            fields[0]
-        ]
-        layout = [
-            name, fields[1:]
-        ]
-        return [
-            ps.Column(layout=layout)
-        ]
+        name = [fields[0]]
+        layout = [name, fields[1:]]
+        return [ps.Column(layout=layout)]
 
     def render_records(self, size):
-        records = [
-            record.fields() for record in self._list_control.records()
-        ]
+        records = [record.fields() for record in self._list_control.records()]
         records_list = [
-            ps.Column(layout=records, size=size, scrollable=True,
-                      vertical_scroll_only=True, pad=ct.RECORD_COL_PAD,
-                      key=self._key)
+            ps.Column(
+                layout=records,
+                size=size,
+                scrollable=True,
+                vertical_scroll_only=True,
+                pad=ct.RECORD_COL_PAD,
+                key=self._key
+            )
         ]
         self._layout.append(records_list)
 
@@ -290,8 +417,8 @@ class SectionComponent:
 
     def render_record_to_top(self, index):
         record_to_top = self._records[index].report()
-        for i in reversed(range(1, index+1)):
-            self._records[i].update(self._records[i-1].report())
+        for i in reversed(range(1, index + 1)):
+            self._records[i].update(self._records[i - 1].report())
         self._records[0].update(record_to_top)
 
     def search(self):
@@ -304,10 +431,18 @@ class SectionComponent:
             record.update(sorted_report[i])
 
     def sort_min_max(self):
-        self.sort(self._list_control.sorted_report_min_max(ct.INDEX[self._element_sort_options.get()]))
+        self.sort(
+            self._list_control.sorted_report_min_max(
+                ct.INDEX[self._element_sort_options.get()]
+            )
+        )
 
     def sort_max_min(self):
-        self.sort(self._list_control.sorted_report_max_min(ct.INDEX[self._element_sort_options.get()]))
+        self.sort(
+            self._list_control.sorted_report_max_min(
+                ct.INDEX[self._element_sort_options.get()]
+            )
+        )
 
     def update_rendered_records(self):
         '''
@@ -332,12 +467,8 @@ class StockSectionComponent(SectionComponent):
         self._list_control = dm.StockList.instance()
         dm.StockList.key(key)
         self._records = self._list_control.records()
-        self._sort_options = [
-            'Nombre', '$ P/U', 'Stock', '%'
-        ]
-        self._clean_options = [
-            'Seleccionados', 'Vacíos'
-        ]
+        self._sort_options = ['Nombre', '$ P/U', 'Stock', '%']
+        self._clean_options = ['Seleccionados', 'Vacíos']
         super().__init__(key)
         self._record_adder = RecordAdderComponent(self._key)
         funcs = {
@@ -356,13 +487,20 @@ class StockSectionComponent(SectionComponent):
         '''
         col = [
             [
-                ps.Column(layout=self._layout, size=ct.STOCK_COL_SIZE, pad=(0, 0))
+                ps.Column(
+                    layout=self._layout, size=ct.STOCK_COL_SIZE, pad=(0, 0)
+                )
             ]
         ]
         frame = [
             [
-                ps.Frame(title='↓ STOCK ↓', title_color=ct.FRAME_TITLE_COLOR[theme],
-                         layout=col, title_location='n', pad=ct.SECTION_FRAME_PAD)
+                ps.Frame(
+                    title='↓ STOCK ↓',
+                    title_color=ct.FRAME_TITLE_COLOR[theme],
+                    layout=col,
+                    title_location='n',
+                    pad=ct.SECTION_FRAME_PAD
+                )
             ]
         ]
         _layout = ps.Column(layout=frame)
@@ -378,7 +516,9 @@ class StockSectionComponent(SectionComponent):
         ]
         '''
         super().render_layout()
-        self.render_sorter(combo_size=ct.SIZES['+s'], btt_size=(20, 20), btt_pad=None)
+        self.render_sorter(
+            combo_size=ct.SIZES['+s'], btt_size=(20, 20), btt_pad=None
+        )
         self.render_index()
         self.render_records()
         self.render_cleaner()
@@ -392,9 +532,14 @@ class StockSectionComponent(SectionComponent):
             [ INDEX_IN, INDEX_IN, INDEX_IN, APPLY_BTT ]
         ]
         '''
-        index = ps.Input(default_text='Stock', size=ct.SIZES['xs'],
-                         pad=ct.LAST_INDEX_INPUT_PAD, readonly=True)
-        self._layout[-1] = self._layout[-1][:2] + [index] + [self._layout[-1][-1]]
+        index = ps.Input(
+            default_text='Stock',
+            size=ct.SIZES['xs'],
+            pad=ct.LAST_INDEX_INPUT_PAD,
+            readonly=True
+        )
+        self._layout[-1] = self._layout[-1][:2] + [index
+                                                  ] + [self._layout[-1][-1]]
 
     def render_secure_mode(self):
         '''
@@ -403,9 +548,16 @@ class StockSectionComponent(SectionComponent):
             [ INDEX_IN, INDEX_IN, INDEX_IN, APPLY_BTT, SECURE_MODE_BTT ]
         ]
         '''
-        self._layout[-1].append(ps.Button(button_text='', key=self._key+',secure_mode',
-                                          image_data=ct.PNG_SECURE_MODE(), tooltip=ct.BTT_TOOLTIPS['secure_mode'],
-                                          image_size=ct.BTT_GENERAL_IMAGE_SIZE, border_width=ct.BTT_BORDER_WIDTH))
+        self._layout[-1].append(
+            ps.Button(
+                button_text='',
+                key=self._key + ',secure_mode',
+                image_data=ct.PNG_SECURE_MODE(),
+                tooltip=ct.BTT_TOOLTIPS['secure_mode'],
+                image_size=ct.BTT_GENERAL_IMAGE_SIZE,
+                border_width=ct.BTT_BORDER_WIDTH
+            )
+        )
 
     def render_records(self):
         '''
@@ -428,9 +580,15 @@ class StockSectionComponent(SectionComponent):
         '''
         cleaner = [
             self._element_clean_options,
-            ps.Button(button_text='➖', image_data=ct.IMAGE, font=ct.IMAGE_FONT,
-                      border_width=ct.BTT_BORDER_WIDTH,  tooltip=ct.BTT_TOOLTIPS['delete'],
-                      key=self._key+',clean', image_size=ct.BTT_ASCII_IMAGE_SIZE)
+            ps.Button(
+                button_text='➖',
+                image_data=ct.IMAGE,
+                font=ct.IMAGE_FONT,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['delete'],
+                key=self._key + ',clean',
+                image_size=ct.BTT_ASCII_IMAGE_SIZE
+            )
         ]
         self._layout.append(cleaner)
 
@@ -447,8 +605,10 @@ class StockSectionComponent(SectionComponent):
         self._layout[-1] += layout
 
     def secure_mode(self):
-        self._layout[-1][-1].update(image_data=ct.PNG_SECURE_MODE(),
-                                    image_size=ct.BTT_GENERAL_IMAGE_SIZE)
+        self._layout[-1][-1].update(
+            image_data=ct.PNG_SECURE_MODE(),
+            image_size=ct.BTT_GENERAL_IMAGE_SIZE
+        )
         for record in self._records:
             record.secure_mode()
 
@@ -480,14 +640,10 @@ class SalesSectionComponent(SectionComponent):
         self._sort_options = [
             'Nombre', '$ P/U', 'Stock', 'Cant.', '$ Fin.', '%'
         ]
-        self._clean_options = [
-            'Seleccionados', 'Todos'
-        ]
+        self._clean_options = ['Seleccionados', 'Todos']
         super().__init__(key)
         self._trader = TraderComponent(self._key)
-        funcs = {
-            'accept_commerce': self.sell
-        }
+        funcs = {'accept_commerce': self.sell}
         self._funcs.update(funcs)
         self.render_layout()
         self.render_content_on(layout)
@@ -500,11 +656,18 @@ class SalesSectionComponent(SectionComponent):
         '''
         col = [
             [
-                ps.Column(layout=self._layout, size=ct.SALES_COL_SIZE, pad=(0, 0))
+                ps.Column(
+                    layout=self._layout, size=ct.SALES_COL_SIZE, pad=(0, 0)
+                )
             ]
         ]
-        sales_sc = ps.Frame(title='↓ VENTAS ↓', title_color=ct.FRAME_TITLE_COLOR[theme],
-                            layout=col, title_location='n', pad=ct.SECTION_FRAME_PAD)
+        sales_sc = ps.Frame(
+            title='↓ VENTAS ↓',
+            title_color=ct.FRAME_TITLE_COLOR[theme],
+            layout=col,
+            title_location='n',
+            pad=ct.SECTION_FRAME_PAD
+        )
         layout[0].append(sales_sc)
 
     def render_layout(self):
@@ -531,12 +694,24 @@ class SalesSectionComponent(SectionComponent):
         ]
         '''
         index = [
-            ps.Input(default_text='Stock', size=ct.SIZES['xs'],
-                     pad=ct.MID_INDEX_INPUT_PAD, readonly=True),
-            ps.Input(default_text='Cant.', size=ct.SIZES['xs'],
-                     pad=ct.MID_INDEX_INPUT_PAD, readonly=True),
-            ps.Input(default_text='$ Fin.', size=ct.SIZES['xs'],
-                     pad=ct.LAST_INDEX_INPUT_PAD, readonly=True),
+            ps.Input(
+                default_text='Stock',
+                size=ct.SIZES['xs'],
+                pad=ct.MID_INDEX_INPUT_PAD,
+                readonly=True
+            ),
+            ps.Input(
+                default_text='Cant.',
+                size=ct.SIZES['xs'],
+                pad=ct.MID_INDEX_INPUT_PAD,
+                readonly=True
+            ),
+            ps.Input(
+                default_text='$ Fin.',
+                size=ct.SIZES['xs'],
+                pad=ct.LAST_INDEX_INPUT_PAD,
+                readonly=True
+            ),
         ]
         self._layout[-1] = self._layout[-1][:2] + index + [self._layout[-1][-1]]
 
@@ -563,9 +738,15 @@ class SalesSectionComponent(SectionComponent):
         '''
         cleaner = [
             self._element_clean_options,
-            ps.Button(button_text='➖', image_data=ct.IMAGE, font=ct.IMAGE_FONT,
-                      border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['delete'],
-                      key=self._key+',clean', image_size=ct.BTT_ASCII_IMAGE_SIZE)
+            ps.Button(
+                button_text='➖',
+                image_data=ct.IMAGE,
+                font=ct.IMAGE_FONT,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['delete'],
+                key=self._key + ',clean',
+                image_size=ct.BTT_ASCII_IMAGE_SIZE
+            )
         ]
         self._layout[-1] += cleaner
 
@@ -580,7 +761,9 @@ class SalesSectionComponent(SectionComponent):
         super().render_records(size=ct.SALES_RCS_LIST_COL_SIZE)
 
     def apply(self):
-        self._layout[-1][3].update(self._list_control.apply(float(self._layout[-1][4].get())))
+        self._layout[-1][3].update(
+            self._list_control.apply(float(self._layout[-1][4].get()))
+        )
 
     def sell(self):
         self._list_control.sell()
@@ -597,9 +780,7 @@ class BuysSectionComponent(SectionComponent):
         self._sort_options = [
             'Nombre', '$ P/U', 'Stock', 'Cant.', 'Proveedor', '$ Fin.', '%'
         ]
-        self._clean_options = [
-            'Seleccionados', 'Todos'
-        ]
+        self._clean_options = ['Seleccionados', 'Todos']
         super().__init__(key)
         self._trader = TraderComponent(self._key)
         self._record_adder = RecordAdderComponent(self._key)
@@ -620,19 +801,18 @@ class BuysSectionComponent(SectionComponent):
             ]
         '''
         col = [
-            [
-                ps.Column(layout=self._layout, size=ct.BUYS_COL_SIZE, pad=(0, 0))
-            ]
+            [ps.Column(layout=self._layout, size=ct.BUYS_COL_SIZE, pad=(0, 0))]
         ]
         buys_sc = [
-            ps.Frame(title='↓ COMPRAS ↓', title_color=ct.FRAME_TITLE_COLOR[theme],
-                     layout=col, title_location='n', pad=ct.SECTION_FRAME_PAD)
+            ps.Frame(
+                title='↓ COMPRAS ↓',
+                title_color=ct.FRAME_TITLE_COLOR[theme],
+                layout=col,
+                title_location='n',
+                pad=ct.SECTION_FRAME_PAD
+            )
         ]
-        _layout = [
-            [
-                layout[0][1]
-            ], buys_sc
-        ]
+        _layout = [[layout[0][1]], buys_sc]
         _layout_col = ps.Column(layout=_layout)
         layout[0][1] = _layout_col
 
@@ -662,14 +842,30 @@ class BuysSectionComponent(SectionComponent):
         ]
         '''
         index = [
-            ps.Input(default_text='Stock', size=ct.SIZES['xs'],
-                     pad=ct.MID_INDEX_INPUT_PAD, readonly=True),
-            ps.Input(default_text='Cant.', size=ct.SIZES['xs'],
-                     pad=ct.MID_INDEX_INPUT_PAD, readonly=True),
-            ps.Input(default_text='$ Fin.', size=ct.SIZES['xs'],
-                     pad=ct.MID_INDEX_INPUT_PAD, readonly=True),
-            ps.Input(default_text='Proveedor', size=ct.SIZES['s'],
-                     pad=ct.LAST_INDEX_INPUT_PAD, readonly=True)
+            ps.Input(
+                default_text='Stock',
+                size=ct.SIZES['xs'],
+                pad=ct.MID_INDEX_INPUT_PAD,
+                readonly=True
+            ),
+            ps.Input(
+                default_text='Cant.',
+                size=ct.SIZES['xs'],
+                pad=ct.MID_INDEX_INPUT_PAD,
+                readonly=True
+            ),
+            ps.Input(
+                default_text='$ Fin.',
+                size=ct.SIZES['xs'],
+                pad=ct.MID_INDEX_INPUT_PAD,
+                readonly=True
+            ),
+            ps.Input(
+                default_text='Proveedor',
+                size=ct.SIZES['s'],
+                pad=ct.LAST_INDEX_INPUT_PAD,
+                readonly=True
+            )
         ]
         self._layout[-1] = self._layout[-1][:2] + index + [self._layout[-1][-1]]
 
@@ -693,9 +889,15 @@ class BuysSectionComponent(SectionComponent):
             [ TRADE_BTT, TRADE_BTT, TEXT_$, SPIN_% ]
         ]
         '''
-        price_collector = ps.Button(button_text='⟳', image_data=ct.IMAGE, font=ct.IMAGE_FONT,
-                                    border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['refresh'],
-                                    key=self._key+',collect', image_size=ct.BTT_ASCII_IMAGE_SIZE)
+        price_collector = ps.Button(
+            button_text='⟳',
+            image_data=ct.IMAGE,
+            font=ct.IMAGE_FONT,
+            border_width=ct.BTT_BORDER_WIDTH,
+            tooltip=ct.BTT_TOOLTIPS['refresh'],
+            key=self._key + ',collect',
+            image_size=ct.BTT_ASCII_IMAGE_SIZE
+        )
         self._layout[0].append(price_collector)
 
     def render_cleaner(self):
@@ -709,9 +911,15 @@ class BuysSectionComponent(SectionComponent):
         '''
         cleaner = [
             self._element_clean_options,
-            ps.Button(button_text='➖', image_data=ct.IMAGE, font=ct.IMAGE_FONT,
-                      border_width=ct.BTT_BORDER_WIDTH, tooltip=ct.BTT_TOOLTIPS['delete'],
-                      key=self._key+',clean', image_size=ct.BTT_ASCII_IMAGE_SIZE)
+            ps.Button(
+                button_text='➖',
+                image_data=ct.IMAGE,
+                font=ct.IMAGE_FONT,
+                border_width=ct.BTT_BORDER_WIDTH,
+                tooltip=ct.BTT_TOOLTIPS['delete'],
+                key=self._key + ',clean',
+                image_size=ct.BTT_ASCII_IMAGE_SIZE
+            )
         ]
         self._layout[-1] += cleaner
 
@@ -745,7 +953,9 @@ class BuysSectionComponent(SectionComponent):
 
     def apply(self):
         # actualiza el precio total
-        self._layout[-1][3].update(self._list_control.apply(self._layout[-1][4].get()))
+        self._layout[-1][3].update(
+            self._list_control.apply(self._layout[-1][4].get())
+        )
 
     def collect(self):
         self._list_control.collect()
@@ -758,6 +968,7 @@ class BuysSectionComponent(SectionComponent):
             self._list_control.clean_all()
         else:
             self._list_control.clean_selected()
+
 
 class Main:
     _window = None
@@ -776,14 +987,19 @@ class Main:
         self._stock_sc = StockSectionComponent('self._stock_sc', self._layout)
         self._sales_sc = SalesSectionComponent('self._sales_sc', self._layout)
         self._buys_sc = BuysSectionComponent('self._buys_sc', self._layout)
-        self._list_components = [
-            self._stock_sc, self._sales_sc, self._buys_sc
-        ]
-        self._options = OptionsComponent('self._options', self._list_components, self._layout)
-        window = ps.Window(title='Papelera Abasto', icon=ct.PNG_ICON,
-                           layout=self._layout, location=location,
-                           font=('Helvetica 14'), finalize=True,
-                           margins=(0, 0))
+        self._list_components = [self._stock_sc, self._sales_sc, self._buys_sc]
+        self._options = OptionsComponent(
+            'self._options', self._list_components, self._layout
+        )
+        window = ps.Window(
+            title='Papelera Abasto',
+            icon=ct.PNG_ICON,
+            layout=self._layout,
+            location=location,
+            font=('Helvetica 14'),
+            finalize=True,
+            margins=(0, 0)
+        )
         Main.set_window(window)
 
     def save(self):
@@ -796,7 +1012,10 @@ class Main:
         exit()
 
     def restart(self):
-        Process(target=dm.FileManager.restart, args=(self._window.current_location(), )).start()
+        Process(
+            target=dm.FileManager.restart,
+            args=(self._window.current_location(), )
+        ).start()
         self.close(2000)
 
     def run(self):
