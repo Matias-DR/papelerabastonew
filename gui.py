@@ -264,6 +264,11 @@ class StockSection(Section, StockAndBuySection):
 
 
 class CommerceSection(Section):
+    @classmethod
+    def render_layout_in_tab(cls) -> Tab:
+        layout = [[cls()]]
+        return Tab(cls.get_tab_title(), layout)
+
     def __init__(self, size: tuple, pad: tuple):
         super().__init__(size, pad)
 
@@ -342,6 +347,10 @@ class CommerceSection(Section):
 
 
 class SaleSection(CommerceSection):
+    @classmethod
+    def get_tab_title(cls) -> str:
+        return 'VENTAS'
+
     def __init__(self):
         super().__init__(SALELIST_S_SIZE, SALELIST_S_PAD)
 
@@ -355,6 +364,10 @@ class SaleSection(CommerceSection):
 
 
 class BuySection(CommerceSection, StockAndBuySection):
+    @classmethod
+    def get_tab_title(cls) -> str:
+        return 'COMPRAS'
+
     def __init__(self):
         CommerceSection.__init__(self, BUYSECTION_S_SIZE, BUYSECTION_S_PAD)
         StockAndBuySection.__init__(self)
@@ -399,14 +412,11 @@ class Main(Window):
         super().__init__(self.render_layout(), font=('Helvetica 16'))
         self.run()
 
-    def render_tab_of(self, title: str, section: Column) -> Tab:
-        return Tab(title=title, layout=section)
-
     def render_layout(self) -> list[list]:
         tab_group = [
             [
-                self.render_tab_of('VENTAS', [[SaleSection()]]),
-                self.render_tab_of('COMPRAS', [[BuySection()]])
+                SaleSection.render_layout_in_tab(),
+                BuySection.render_layout_in_tab()
             ]
         ]
         layout = [[StockSection()], [TabGroup(tab_group)]]
