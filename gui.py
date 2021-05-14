@@ -393,14 +393,23 @@ class Main(Window):
 
     def __init__(self):
         theme('PapelerAbasto')
-        super().__init__(self.render_layout(), font=('Helvetica 16'))
-        self.run()
-
-    def render_layout(self) -> list[list]:
         StockSection.key('StockSection.instance()')
         SaleSection.key('SaleSection.instance()')
         BuySection.key('BuySection.instance()')
-        layout = [[StockSection(), SaleSection()], [BuySection()]]
+        super().__init__(self.render_layout(), font=('Helvetica 16'))
+        self.run()
+
+    def render_tab_of(self, title: str, section: Column) -> Tab:
+        return Tab(title=title, layout=section)
+
+    def render_layout(self) -> list[list]:
+        tab_group = [
+            [
+                self.render_tab_of('VENTAS', [[SaleSection()]]),
+                self.render_tab_of('COMPRAS', [[BuySection()]])
+            ]
+        ]
+        layout = [[StockSection()], [TabGroup(tab_group)]]
         return layout
 
     def run(self):
