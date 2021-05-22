@@ -11,9 +11,8 @@ from constants import (
     CLEANER_COMBO_SIZE, CLEANER_COMBO_PAD, CLEANER_BUTTON_KEY,
     CLEANER_BUTTON_PAD, CLEANER_BUTTON_TEXT, CLEANER_BUTTON_TOOLTIP,
     APPLY_BUTTON_KEY, APPLY_BUTTON_PAD, APPLY_BUTTON_TEXT, APPLY_BUTTON_TOOLTIP,
-    INDEX_RADIO_SIZE, INDEX_RADIO_PAD, INDEX_COLUMN_PAD, RECORDLIST_W_SIZE,
-    RECORDLIST_W_PAD, INDEX_INPUT_NAME_SIZE, INDEX_INPUT_NAME_PAD,
-    INDEX_INPUT_NAME_TEXT, INDEX_INPUT_UNIT_PRICE_SIZE,
+    INDEX_RADIO_SIZE, INDEX_RADIO_PAD, INDEX_COLUMN_PAD, INDEX_INPUT_NAME_SIZE,
+    INDEX_INPUT_NAME_PAD, INDEX_INPUT_NAME_TEXT, INDEX_INPUT_UNIT_PRICE_SIZE,
     INDEX_INPUT_UNIT_PRICE_PAD, INDEX_INPUT_UNIT_PRICE_TEXT,
     INDEX_INPUT_STOCK_SIZE, INDEX_INPUT_STOCK_PAD, INDEX_INPUT_STOCK_TEXT,
     INDEX_INPUT_PERCENT_SIZE, INDEX_INPUT_PERCENT_PAD, INDEX_INPUT_PERCENT_TEXT,
@@ -31,7 +30,11 @@ from constants import (
     PRE_VISULIZATOR_BUTTON_TEXT, PRE_VISULIZATOR_BUTTON_TOOLTIP,
     BUYSECTION_S_SIZE, BUYSECTION_S_PAD, INDEX_INPUT_AMOUNT_SIZE,
     INDEX_INPUT_AMOUNT_PAD, INDEX_INPUT_AMOUNT_TEXT, INDEX_INPUT_SUPPLIER_SIZE,
-    INDEX_INPUT_SUPPLIER_PAD, INDEX_INPUT_SUPPLIER_TEXT
+    INDEX_INPUT_SUPPLIER_PAD, INDEX_INPUT_SUPPLIER_TEXT, STOCKLIST_S_SIZE,
+    STOCKLIST_S_PAD, TOTAL_PRICE_SIZE, TOTAL_PRICE_PAD, SORTER_COMBO_KEY,
+    SORTER_COMBO_SIZE, SORTER_COMBO_PAD, SORTER_COMBO_TOOLTIP,
+    SORTER_COMBO_STOCK_VALUES, SORTER_COMBO_SALES_VALUES,
+    SORTER_COMBO_BUYS_VALUES, WINDOWS_SIZE
 )
 
 
@@ -67,7 +70,17 @@ class Section(Column):
         ]
 
     def render_sorter(self) -> list:
+        sort_values = self.get_sort_values()
         return [
+            Combo(
+                key=self.__key + SORTER_COMBO_KEY,
+                values=sort_values,
+                default_value=sort_values[0],
+                size=SORTER_COMBO_SIZE,
+                pad=SORTER_COMBO_PAD,
+                tooltip=SORTER_COMBO_TOOLTIP,
+                readonly=True
+            ),
             Button(
                 key=self.__key + SORTER_BUTTON_UP_KEY,
                 image_data=BUTTON_IMAGE,
@@ -119,18 +132,9 @@ class Section(Column):
         ]
 
     def render_base_index(
-        self, key: str, group_id: int, input_size: tuple, input_pad: tuple,
-        default_text: str
+        self, input_size: tuple, input_pad: tuple, default_text: str
     ) -> list:
         index = [
-            [
-                Radio(
-                    key=self.__key + str(key),
-                    group_id=group_id,
-                    size=INDEX_RADIO_SIZE,
-                    pad=INDEX_RADIO_PAD
-                )
-            ],
             [
                 Input(
                     size=input_size,
@@ -148,34 +152,33 @@ class Section(Column):
             )
         ]
 
-    def render_name_index(self, key: int, group_id: int) -> list:
+    def render_name_index(self) -> list:
         return self.render_base_index(
-            key, group_id, INDEX_INPUT_NAME_SIZE, INDEX_INPUT_NAME_PAD,
-            INDEX_INPUT_NAME_TEXT
+            INDEX_INPUT_NAME_SIZE, INDEX_INPUT_NAME_PAD, INDEX_INPUT_NAME_TEXT
         )
 
-    def render_unit_price_index(self, key: int, group_id: int) -> list:
+    def render_unit_price_index(self) -> list:
         return self.render_base_index(
-            key, group_id, INDEX_INPUT_UNIT_PRICE_SIZE,
-            INDEX_INPUT_UNIT_PRICE_PAD, INDEX_INPUT_UNIT_PRICE_TEXT
+            INDEX_INPUT_UNIT_PRICE_SIZE, INDEX_INPUT_UNIT_PRICE_PAD,
+            INDEX_INPUT_UNIT_PRICE_TEXT
         )
 
-    def render_stock_index(self, key: int, group_id: int) -> list:
+    def render_stock_index(self) -> list:
         return self.render_base_index(
-            key, group_id, INDEX_INPUT_STOCK_SIZE, INDEX_INPUT_STOCK_PAD,
+            INDEX_INPUT_STOCK_SIZE, INDEX_INPUT_STOCK_PAD,
             INDEX_INPUT_STOCK_TEXT
         )
 
-    def render_percent_index(self, key: int, group_id: int) -> list:
+    def render_percent_index(self) -> list:
         return self.render_base_index(
-            key, group_id, INDEX_INPUT_PERCENT_SIZE, INDEX_INPUT_PERCENT_PAD,
+            INDEX_INPUT_PERCENT_SIZE, INDEX_INPUT_PERCENT_PAD,
             INDEX_INPUT_PERCENT_TEXT
         )
 
-    def render_index(self, group_id: int):
-        index = self.render_name_index(0, group_id)
-        index += self.render_unit_price_index(1, group_id)
-        index += self.render_stock_index(2, group_id)
+    def render_index(self) -> list:
+        index = self.render_name_index()
+        index += self.render_unit_price_index()
+        index += self.render_stock_index()
         return index
 
     def render_record_list(self) -> list:
@@ -238,16 +241,20 @@ class StockAndBuySection:
 
 
 class StockSection(Section, StockAndBuySection):
+    @classmethod
+    def get_sort_values(cls) -> list:
+        return SORTER_COMBO_STOCK_VALUES
+
     def __init__(self):
-        Section.__init__(self, RECORDLIST_W_SIZE, RECORDLIST_W_PAD)
+        Section.__init__(self, STOCKLIST_S_SIZE, STOCKLIST_S_PAD)
         StockAndBuySection.__init__(self)
 
     def get_record_list(self) -> RecordList:
         return StockList
 
     def render_index(self) -> list:
-        index = super().render_index(0)
-        index += self.render_percent_index(3, 0)
+        index = super().render_index()
+        index += self.render_percent_index()
         return index
 
     def render_list(self) -> list:
@@ -272,22 +279,22 @@ class CommerceSection(Section):
     def __init__(self, size: tuple, pad: tuple):
         super().__init__(size, pad)
 
-    def render_amount_index(self, key: int, group_id: int) -> list:
+    def render_amount_index(self) -> list:
         return super().render_base_index(
-            key, group_id, INDEX_INPUT_AMOUNT_SIZE, INDEX_INPUT_AMOUNT_PAD,
+            INDEX_INPUT_AMOUNT_SIZE, INDEX_INPUT_AMOUNT_PAD,
             INDEX_INPUT_AMOUNT_TEXT
         )
 
-    def render_final_price_index(self, key: int, group_id: int) -> list:
+    def render_final_price_index(self) -> list:
         return self.render_base_index(
-            key, group_id, INDEX_INPUT_FINAL_PRICE_SIZE,
-            INDEX_INPUT_FINAL_PRICE_PAD, INDEX_INPUT_FINAL_PRICE_TEXT
+            INDEX_INPUT_FINAL_PRICE_SIZE, INDEX_INPUT_FINAL_PRICE_PAD,
+            INDEX_INPUT_FINAL_PRICE_TEXT
         )
 
-    def render_index(self, group_id) -> list:
-        index = super().render_index(group_id)
-        index += self.render_amount_index(4, group_id)
-        index += self.render_final_price_index(5, group_id)
+    def render_index(self) -> list:
+        index = super().render_index()
+        index += self.render_amount_index()
+        index += self.render_final_price_index()
         return index
 
     def render_commerce(self) -> list:
@@ -307,8 +314,8 @@ class CommerceSection(Section):
             Text(text='$'),
             Text(
                 key=self.get_key() + TOTAL_PRICE_KEY,
-                size=S_TMP_SIZE,
-                pad=S_TMP_PAD
+                size=TOTAL_PRICE_SIZE,
+                pad=TOTAL_PRICE_PAD
             )
         ]
 
@@ -348,6 +355,10 @@ class CommerceSection(Section):
 
 class SaleSection(CommerceSection):
     @classmethod
+    def get_sort_values(cls) -> list:
+        return SORTER_COMBO_SALES_VALUES
+
+    @classmethod
     def get_tab_title(cls) -> str:
         return 'VENTAS'
 
@@ -357,13 +368,17 @@ class SaleSection(CommerceSection):
     def get_record_list(self) -> RecordList:
         return SaleList
 
-    def render_index(self):
-        index = super().render_index(1)
-        index += self.render_percent_index(6, 1)
+    def render_index(self) -> list:
+        index = super().render_index()
+        index += self.render_percent_index()
         return index
 
 
 class BuySection(CommerceSection, StockAndBuySection):
+    @classmethod
+    def get_sort_values(cls) -> list:
+        return SORTER_COMBO_BUYS_VALUES
+
     @classmethod
     def get_tab_title(cls) -> str:
         return 'COMPRAS'
@@ -375,16 +390,16 @@ class BuySection(CommerceSection, StockAndBuySection):
     def get_record_list(self) -> RecordList:
         return BuyList
 
-    def render_supplier_index(self, key: int, group_id: int) -> list:
+    def render_supplier_index(self) -> list:
         return CommerceSection.render_base_index(
-            self, key, group_id, INDEX_INPUT_SUPPLIER_SIZE,
-            INDEX_INPUT_SUPPLIER_PAD, INDEX_INPUT_SUPPLIER_TEXT
+            self, INDEX_INPUT_SUPPLIER_SIZE, INDEX_INPUT_SUPPLIER_PAD,
+            INDEX_INPUT_SUPPLIER_TEXT
         )
 
     def render_index(self) -> list:
-        index = CommerceSection.render_index(self, 2)
-        index += self.render_supplier_index(6, 2)
-        index += self.render_percent_index(7, 2)
+        index = CommerceSection.render_index(self)
+        index += self.render_supplier_index()
+        index += self.render_percent_index()
         return index
 
     def render_layout(self) -> list:
@@ -409,7 +424,9 @@ class Main(Window):
         StockSection.key('StockSection.instance()')
         SaleSection.key('SaleSection.instance()')
         BuySection.key('BuySection.instance()')
-        super().__init__(self.render_layout(), font=('Helvetica 16'))
+        super().__init__(
+            self.render_layout(), font=('Helvetica 16'), size=WINDOWS_SIZE
+        )
         self.run()
 
     def render_layout(self) -> list[list]:

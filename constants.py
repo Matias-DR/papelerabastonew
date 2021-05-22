@@ -3,6 +3,11 @@ from pathlib import Path as path
 
 
 # ------------------------------------------ #
+#           RECORDLIST PARAMETERS            #
+# ------------------------------------------ #
+WINDOWS_SIZE = (1280, 640)
+
+# ------------------------------------------ #
 #               DATE AND TIME                #
 # ------------------------------------------ #
 def DATE() -> str:
@@ -67,7 +72,7 @@ SUPPLIER_PAD = R_TMP_PAD
 # ------------------------------------------ #
 #           RECORDLIST PARAMETERS            #
 # ------------------------------------------ #
-RL_TMP_SIZE = (700, 300)
+RL_TMP_SIZE = (1241, 300)
 RL_TMP_PAD = (0, 1)
 RECORDLIST_COLUMN_SIZE = RL_TMP_SIZE
 RECORDLIST_COLUMN_PAD = RL_TMP_PAD
@@ -75,6 +80,18 @@ SALELIST_COLUMN_SIZE = RL_TMP_SIZE
 SALELIST_COLUMN_PAD = RL_TMP_PAD
 BUYLIST_COLUMN_SIZE = RL_TMP_SIZE
 BUYLIST_COLUMN_PAD = RL_TMP_PAD
+
+# ------------------------------------------ #
+#               SECTION SIZES                #
+# ------------------------------------------ #
+RL_S_TMP_SIZE = (717, 398)
+RL_S_TMP_PAD = ((0, 0), (0, 0))
+STOCKLIST_S_SIZE = (1258, 398)
+STOCKLIST_S_PAD = RL_S_TMP_PAD
+SALELIST_S_SIZE = RL_S_TMP_SIZE
+SALELIST_S_PAD = RL_S_TMP_PAD
+BUYSECTION_S_SIZE = RL_S_TMP_SIZE
+BUYSECTION_S_PAD = RL_S_TMP_PAD
 
 # ------------------------------------------ #
 #             SECTION PARAMETERS             #
@@ -88,6 +105,18 @@ FINDER_BUTTON_KEY = ',finder_button'
 FINDER_BUTTON_PAD = S_TMP_PAD
 FINDER_BUTTON_TEXT = '🔍'
 FINDER_BUTTON_TOOLTIP = ''
+SORTER_COMBO_KEY = ''
+SORTER_COMBO_SIZE = S_TMP_SIZE
+SORTER_COMBO_PAD = S_TMP_PAD
+SORTER_COMBO_TOOLTIP = ''
+SORTER_COMBO_STOCK_VALUES = ['NOMBRE', 'PRECIO POR UNIDAD', 'STOCK']
+SORTER_COMBO_SALES_VALUES = [
+    'NOMBRE', 'PRECIO POR UNIDAD', 'STOCK', 'CANTIDAD VENDIDA', 'PRECIO FINAL'
+]
+SORTER_COMBO_BUYS_VALUES = [
+    'NOMBRE', 'PRECIO POR UNIDAD', 'STOCK', 'CANTIDAD COMPRADA', 'PRECIO FINL',
+    'PROVEEDOR'
+]
 SORTER_BUTTON_UP_KEY = ',finder_inputsorter_button_up'
 SORTER_BUTTON_DOWN_KEY = ',sorter_button_down'
 SORTER_BUTTON_PAD = S_TMP_PAD
@@ -156,17 +185,6 @@ PRE_VISULIZATOR_BUTTON_PAD = S_TMP_PAD
 PRE_VISULIZATOR_BUTTON_TEXT = ''
 PRE_VISULIZATOR_BUTTON_TOOLTIP = ''
 
-
-RL_TMP_SIZE = (800, 500)
-RL_TMP_PAD = ((0, 0), (0, 0))
-RECORDLIST_W_SIZE = RL_TMP_SIZE
-RECORDLIST_W_PAD = RL_TMP_PAD
-RECORDLIST_W_SIZE = RL_TMP_SIZE
-RECORDLIST_W_PAD = RL_TMP_PAD
-SALELIST_S_SIZE = RL_TMP_SIZE
-SALELIST_S_PAD = RL_TMP_PAD
-BUYSECTION_S_SIZE = RL_TMP_SIZE
-BUYSECTION_S_PAD = RL_TMP_PAD
-
 BUTTON_IMAGE = b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9ElEQVQ4T3VTWRYDMQiS+x/aPgWX2HY+ZkkiAjKwuJB3g5s5+Om6c6E24qmzhnxVKRf7AiGiOI/BzBtIHREtYEAcdi9gMqn6g+nZnaAikl9N63n/U5zi2FPNEkAo2mhMqFsfLilRQ2lt2euBiKZLbnDISyIVfZ46moIfwpO091KS7dmcTqwpFPGRU9PrebVzBI4BSMIQmwxwbTxebmc02JsTO80rW6N1RUQesE45cM0kKOWET9qaSQleyM0g9Na1O++Zn7xSwkzyB2FpfXP6JkypLev4gxCaUr5NLN9rf0f5B8c97zdA5NU5eLSuP/icksGT7Q/rqoAi4wjvpQAAAABJRU5ErkJggg=='
+# BUTTON_IMAGE = None
 BUTTON_IMAGE_SIZE = (52, 22)
