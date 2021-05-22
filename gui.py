@@ -1,4 +1,4 @@
-from record_list import (RecordList, StockList, SaleList, BuyList)
+from record_list import (RecordList, StockList, SaleList, BuyList, FileManager)
 from PySimpleGUI import (
     theme, Window, Column, Frame, Tab, TabGroup, Button, SaveAs, Input, Combo,
     Spin, Radio, Text
@@ -420,6 +420,7 @@ class Main(Window):
         return cls._instance
 
     def __init__(self):
+        FileManager.db_control()
         theme('PapelerAbasto')
         StockSection.key('StockSection.instance()')
         SaleSection.key('SaleSection.instance()')
