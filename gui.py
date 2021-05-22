@@ -34,7 +34,7 @@ from constants import (
     STOCKLIST_S_PAD, TOTAL_PRICE_SIZE, TOTAL_PRICE_PAD, SORTER_COMBO_KEY,
     SORTER_COMBO_SIZE, SORTER_COMBO_PAD, SORTER_COMBO_TOOLTIP,
     SORTER_COMBO_STOCK_VALUES, SORTER_COMBO_SALES_VALUES,
-    SORTER_COMBO_BUYS_VALUES, WINDOWS_SIZE
+    SORTER_COMBO_BUYS_VALUES, WINDOWS_SIZE, WINDOWS_LOCATION
 )
 
 
@@ -426,7 +426,10 @@ class Main(Window):
         SaleSection.key('SaleSection.instance()')
         BuySection.key('BuySection.instance()')
         super().__init__(
-            self.render_layout(), font=('Helvetica 16'), size=WINDOWS_SIZE
+            self.render_layout(),
+            font=('Helvetica 16'),
+            size=WINDOWS_SIZE,
+            location=WINDOWS_LOCATION
         )
         self.run()
 
