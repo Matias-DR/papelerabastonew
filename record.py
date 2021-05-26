@@ -1,15 +1,12 @@
 from PySimpleGUI import (theme, Window, Column, Input, Spin, Checkbox, Button)
-from constants import (
-    NAME_SIZE, NAME_PAD, UNIT_PRICE_SIZE, UNIT_PRICE_PAD, STOCK_SIZE, STOCK_PAD,
-    SPIN_VALUES, SPIN_SIZE, SPIN_PAD, CHECK_PAD, AMOUNT_SIZE, AMOUNT_PAD,
-    FINAL_PRICE_SIZE, FINAL_PRICE_PAD, SUPPLIER_SIZE, SUPPLIER_PAD, NAME_SIZE,
-    NAME_PAD, UNIT_PRICE_SIZE, UNIT_PRICE_PAD, STOCK_SIZE, STOCK_PAD,
-    SPIN_VALUES, SPIN_SIZE, SPIN_PAD, CHECK_PAD, AMOUNT_SIZE, AMOUNT_PAD,
-    FINAL_PRICE_SIZE, FINAL_PRICE_PAD, SUPPLIER_SIZE, SUPPLIER_PAD
-)
+import constants as cs
 
 
 class Record(Column):
+    @classmethod
+    def get_name_size(cls) -> tuple:
+        return cls._NAME_SIZE
+
     @classmethod
     def get_empty_report(cls) -> list:
         return ['', 0, 0]
@@ -25,28 +22,32 @@ class Record(Column):
         super().__init__(layout=default_fields)
 
     def _name_element(self, name: str) -> Input:
-        return Input(default_text=name, size=NAME_SIZE, pad=NAME_PAD)
+        return Input(
+            default_text=name, size=self.get_name_size(), pad=cs.NAME_PAD
+        )
 
     def _unit_price_element(self, unit_price: float) -> Input:
         return Input(
-            default_text=unit_price, size=UNIT_PRICE_SIZE, pad=UNIT_PRICE_PAD
+            default_text=unit_price,
+            size=cs.UNIT_PRICE_SIZE,
+            pad=cs.UNIT_PRICE_PAD
         )
 
     def _stock_element(self, stock: int) -> Input:
-        return Input(default_text=stock, size=STOCK_SIZE, pad=STOCK_PAD)
+        return Input(default_text=stock, size=cs.STOCK_SIZE, pad=cs.STOCK_PAD)
 
     def _percent_element(self, percent: float) -> Spin:
         return Spin(
-            values=SPIN_VALUES,
+            values=cs.SPIN_VALUES,
             initial_value=percent,
             readonly=True,
-            size=SPIN_SIZE,
-            pad=SPIN_PAD
+            size=cs.SPIN_SIZE,
+            pad=cs.SPIN_PAD
         )
 
     def _check_element(self, check: bool) -> Checkbox:
         return Checkbox(
-            text='', default=check, pad=CHECK_PAD, checkbox_color='White'
+            text='', default=check, pad=cs.CHECK_PAD, checkbox_color='White'
         )
 
     def _add_percent_and_check_elements(self, percent: int, check: bool):
@@ -146,15 +147,16 @@ class StockAndBuyRecord:
 
 
 class StockRecord(Record, StockAndBuyRecord):
+    _NAME_SIZE = cs.STOCK_NAME_SIZE
     _secure_mode = False
-
-    @classmethod
-    def change_secure_mode(cls):
-        cls._secure_mode = not cls._secure_mode
 
     @classmethod
     def get_empty_report(cls) -> list:
         return Record.get_empty_report() + [0, False]
+
+    @classmethod
+    def change_secure_mode(cls):
+        cls._secure_mode = not cls._secure_mode
 
     def __init__(
         self,
@@ -226,13 +228,15 @@ class CommerceRecord(Record):
         self._get_fields().append(self._final_price_element(final_price))
 
     def _amount_element(self, amount: int):
-        return Input(default_text=amount, size=AMOUNT_SIZE, pad=AMOUNT_PAD)
+        return Input(
+            default_text=amount, size=cs.AMOUNT_SIZE, pad=cs.AMOUNT_PAD
+        )
 
     def _final_price_element(self, final_price: float):
         return Input(
             default_text=final_price,
-            size=FINAL_PRICE_SIZE,
-            pad=FINAL_PRICE_PAD
+            size=cs.FINAL_PRICE_SIZE,
+            pad=cs.FINAL_PRICE_PAD
         )
 
     def get_amount(self) -> int:
@@ -265,6 +269,8 @@ class CommerceRecord(Record):
 
 
 class SaleRecord(CommerceRecord):
+    _NAME_SIZE = cs.SALE_NAME_SIZE
+
     def __init__(
         self,
         name: str = '',
@@ -300,6 +306,8 @@ class SaleRecord(CommerceRecord):
 
 
 class BuyRecord(CommerceRecord, StockAndBuyRecord):
+    _NAME_SIZE = cs.BUY_NAME_SIZE
+
     @classmethod
     def get_empty_report(cls) -> list:
         return ['', 0, 0, 0, 0, '', 0, True]
@@ -325,7 +333,7 @@ class BuyRecord(CommerceRecord, StockAndBuyRecord):
 
     def _supplier_element(self, supplier):
         return Input(
-            default_text=supplier, size=SUPPLIER_SIZE, pad=SUPPLIER_PAD
+            default_text=supplier, size=cs.SUPPLIER_SIZE, pad=cs.SUPPLIER_PAD
         )
 
     def _make_elements_read_only(self):

@@ -1,45 +1,31 @@
 from record_list import (RecordList, StockList, SaleList, BuyList, FileManager)
 from PySimpleGUI import (
-    theme, Window, Column, Frame, Tab, TabGroup, Button, SaveAs, Input, Combo,
-    Spin, Radio, Text
+    T, theme, Window, Column, Frame, Tab, TabGroup, Button, SaveAs, Input,
+    Combo, Spin, Radio, Text
 )
-from constants import (
-    FINDER_INPUT_KEY, FINDER_INPUT_SIZE, FINDER_INPUT_PAD, FINDER_BUTTON_KEY,
-    FINDER_BUTTON_PAD, FINDER_BUTTON_TEXT, FINDER_BUTTON_TOOLTIP,
-    SORTER_BUTTON_UP_KEY, SORTER_BUTTON_DOWN_KEY, SORTER_BUTTON_PAD,
-    SORTER_BUTTON_UP_TOOLTIP, SORTER_BUTTON_DOWN_TOOLTIP, CLEANER_COMBO_KEY,
-    CLEANER_COMBO_SIZE, CLEANER_COMBO_PAD, CLEANER_BUTTON_KEY,
-    CLEANER_BUTTON_PAD, CLEANER_BUTTON_TEXT, CLEANER_BUTTON_TOOLTIP,
-    APPLY_BUTTON_KEY, APPLY_BUTTON_PAD, APPLY_BUTTON_TEXT, APPLY_BUTTON_TOOLTIP,
-    INDEX_RADIO_SIZE, INDEX_RADIO_PAD, INDEX_COLUMN_PAD, INDEX_INPUT_NAME_SIZE,
-    INDEX_INPUT_NAME_PAD, INDEX_INPUT_NAME_TEXT, INDEX_INPUT_UNIT_PRICE_SIZE,
-    INDEX_INPUT_UNIT_PRICE_PAD, INDEX_INPUT_UNIT_PRICE_TEXT,
-    INDEX_INPUT_STOCK_SIZE, INDEX_INPUT_STOCK_PAD, INDEX_INPUT_STOCK_TEXT,
-    INDEX_INPUT_PERCENT_SIZE, INDEX_INPUT_PERCENT_PAD, INDEX_INPUT_PERCENT_TEXT,
-    BUTTON_IMAGE, BUTTON_IMAGE_SIZE, STOCK_SECTION_CLEANER_OPTIONS,
-    SORTER_BUTTON_UP_TEXT, SORTER_BUTTON_DOWN_TEXT, ADDER_SPIN_KEY,
-    ADDER_SPIN_SIZE, ADDER_SPIN_PAD, ADDER_SPIN_VALUES, ADDER_BUTTON_KEY,
-    ADDER_BUTTON_PAD, ADDER_BUTTON_TEXT, ADDER_BUTTON_TOOLTIP,
-    STOCK_SECTION_CLEANER_OPTIONS, SAVE_AS_BUTTON_KEY, SAVE_AS_BUTTON_PAD,
-    SAVE_AS_BUTTON_TEXT, SAVE_AS_BUTTON_TOOLTIP, SAVE_AS_BUTTON_INITIAL_FOLDER,
-    SALELIST_S_SIZE, SALELIST_S_PAD, INDEX_INPUT_FINAL_PRICE_SIZE,
-    INDEX_INPUT_FINAL_PRICE_PAD, INDEX_INPUT_FINAL_PRICE_TEXT,
-    COMMERCE_BUTTON_KEY, COMMERCE_BUTTON_PAD, COMMERCE_BUTTON_TEXT,
-    COMMERCE_BUTTON_TOOLTIP, TOTAL_PRICE_KEY, S_TMP_SIZE, S_TMP_PAD,
-    PRE_VISULIZATOR_BUTTON_KEY, PRE_VISULIZATOR_BUTTON_PAD,
-    PRE_VISULIZATOR_BUTTON_TEXT, PRE_VISULIZATOR_BUTTON_TOOLTIP,
-    BUYSECTION_S_SIZE, BUYSECTION_S_PAD, INDEX_INPUT_AMOUNT_SIZE,
-    INDEX_INPUT_AMOUNT_PAD, INDEX_INPUT_AMOUNT_TEXT, INDEX_INPUT_SUPPLIER_SIZE,
-    INDEX_INPUT_SUPPLIER_PAD, INDEX_INPUT_SUPPLIER_TEXT, STOCKLIST_S_SIZE,
-    STOCKLIST_S_PAD, TOTAL_PRICE_SIZE, TOTAL_PRICE_PAD, SORTER_COMBO_KEY,
-    SORTER_COMBO_SIZE, SORTER_COMBO_PAD, SORTER_COMBO_TOOLTIP,
-    SORTER_COMBO_STOCK_VALUES, SORTER_COMBO_SALES_VALUES,
-    SORTER_COMBO_BUYS_VALUES, WINDOWS_SIZE, WINDOWS_LOCATION
-)
+import constants as cs
+from multiprocessing import Process
+
+MAIN = None
 
 
 class Section(Column):
     __key = None
+    __instance = None
+
+    @classmethod
+    def instance(cls):
+        if not cls.__instance:
+            cls.__instance = cls()
+        return cls.__instance
+
+    @classmethod
+    def get_index_name_size(cls) -> tuple:
+        return cls._INDEX_NAME_SIZE
+
+    @classmethod
+    def get_cleaner_options(cls) -> list:
+        return cls._CLEANER_OPTIONS
 
     @classmethod
     def get_key(cls) -> str:
@@ -52,20 +38,23 @@ class Section(Column):
     def __init__(self, size: tuple, pad: tuple):
         super().__init__(layout=self.render_layout(), size=size, pad=pad)
 
+    def __len__(self) -> int:
+        return len(self.get_record_list())
+
     def render_finder(self) -> list:
         return [
             Input(
-                key=self.__key + FINDER_INPUT_KEY,
-                size=FINDER_INPUT_SIZE,
-                pad=FINDER_INPUT_PAD
+                key=self.__key + cs.FINDER_INPUT_KEY,
+                size=cs.FINDER_INPUT_SIZE,
+                pad=cs.FINDER_INPUT_PAD
             ),
             Button(
-                key=self.__key + FINDER_BUTTON_KEY,
-                image_data=BUTTON_IMAGE,
-                image_size=BUTTON_IMAGE_SIZE,
-                pad=FINDER_BUTTON_PAD,
-                button_text=FINDER_BUTTON_TEXT,
-                tooltip=FINDER_BUTTON_TOOLTIP
+                key=self.__key + cs.FINDER_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.FINDER_BUTTON_PAD,
+                button_text=cs.FINDER_BUTTON_TEXT,
+                tooltip=cs.FINDER_BUTTON_TOOLTIP
             )
         ]
 
@@ -73,61 +62,62 @@ class Section(Column):
         sort_values = self.get_sort_values()
         return [
             Combo(
-                key=self.__key + SORTER_COMBO_KEY,
+                key=self.__key + cs.SORTER_COMBO_KEY,
                 values=sort_values,
                 default_value=sort_values[0],
-                size=SORTER_COMBO_SIZE,
-                pad=SORTER_COMBO_PAD,
-                tooltip=SORTER_COMBO_TOOLTIP,
+                size=cs.SORTER_COMBO_SIZE,
+                pad=cs.SORTER_COMBO_PAD,
+                tooltip=cs.SORTER_COMBO_TOOLTIP,
                 readonly=True
             ),
             Button(
-                key=self.__key + SORTER_BUTTON_UP_KEY,
-                image_data=BUTTON_IMAGE,
-                image_size=BUTTON_IMAGE_SIZE,
-                pad=SORTER_BUTTON_PAD,
-                button_text=SORTER_BUTTON_UP_TEXT,
-                tooltip=SORTER_BUTTON_UP_TOOLTIP
+                key=self.__key + cs.SORTER_BUTTON_UP_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.SORTER_BUTTON_PAD,
+                button_text=cs.SORTER_BUTTON_UP_TEXT,
+                tooltip=cs.SORTER_BUTTON_UP_TOOLTIP
             ),
             Button(
-                key=self.__key + SORTER_BUTTON_DOWN_KEY,
-                image_data=BUTTON_IMAGE,
-                image_size=BUTTON_IMAGE_SIZE,
-                pad=SORTER_BUTTON_PAD,
-                button_text=SORTER_BUTTON_DOWN_TEXT,
-                tooltip=SORTER_BUTTON_DOWN_TOOLTIP
+                key=self.__key + cs.SORTER_BUTTON_DOWN_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.SORTER_BUTTON_PAD,
+                button_text=cs.SORTER_BUTTON_DOWN_TEXT,
+                tooltip=cs.SORTER_BUTTON_DOWN_TOOLTIP
             ),
         ]
 
-    def render_cleaner(self, values: list) -> list:
+    def render_cleaner(self) -> list:
+        cleaner_options = self.get_cleaner_options()
         return [
             Combo(
-                key=self.__key + CLEANER_COMBO_KEY,
-                size=CLEANER_COMBO_SIZE,
-                pad=CLEANER_COMBO_PAD,
-                values=values,
-                default_value=values[0],
+                key=self.__key + cs.CLEANER_COMBO_KEY,
+                size=cs.CLEANER_COMBO_SIZE,
+                pad=cs.CLEANER_COMBO_PAD,
+                values=cleaner_options,
+                default_value=cleaner_options[0],
                 readonly=True
             ),
             Button(
-                key=self.__key + CLEANER_BUTTON_KEY,
-                image_data=BUTTON_IMAGE,
-                image_size=BUTTON_IMAGE_SIZE,
-                pad=CLEANER_BUTTON_PAD,
-                button_text=CLEANER_BUTTON_TEXT,
-                tooltip=CLEANER_BUTTON_TOOLTIP
+                key=self.__key + cs.CLEANER_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.CLEANER_BUTTON_PAD,
+                button_text=cs.CLEANER_BUTTON_TEXT,
+                tooltip=cs.CLEANER_BUTTON_TOOLTIP
             )
         ]
 
     def render_apply(self) -> list:
         return [
             Button(
-                key=self.__key + APPLY_BUTTON_KEY,
-                image_data=BUTTON_IMAGE,
-                image_size=BUTTON_IMAGE_SIZE,
-                pad=APPLY_BUTTON_PAD,
-                button_text=APPLY_BUTTON_TEXT,
-                tooltip=APPLY_BUTTON_TOOLTIP
+                key=self.__key + cs.APPLY_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.APPLY_BUTTON_PAD,
+                button_text=cs.APPLY_BUTTON_TEXT,
+                tooltip=cs.APPLY_BUTTON_TOOLTIP
             )
         ]
 
@@ -147,32 +137,33 @@ class Section(Column):
         return [
             Column(
                 layout=index,
-                pad=INDEX_COLUMN_PAD,
+                pad=cs.INDEX_COLUMN_PAD,
                 element_justification='center'
             )
         ]
 
     def render_name_index(self) -> list:
         return self.render_base_index(
-            INDEX_INPUT_NAME_SIZE, INDEX_INPUT_NAME_PAD, INDEX_INPUT_NAME_TEXT
+            self.get_index_name_size(), cs.INDEX_INPUT_NAME_PAD,
+            cs.INDEX_INPUT_NAME_TEXT
         )
 
     def render_unit_price_index(self) -> list:
         return self.render_base_index(
-            INDEX_INPUT_UNIT_PRICE_SIZE, INDEX_INPUT_UNIT_PRICE_PAD,
-            INDEX_INPUT_UNIT_PRICE_TEXT
+            cs.INDEX_INPUT_UNIT_PRICE_SIZE, cs.INDEX_INPUT_UNIT_PRICE_PAD,
+            cs.INDEX_INPUT_UNIT_PRICE_TEXT
         )
 
     def render_stock_index(self) -> list:
         return self.render_base_index(
-            INDEX_INPUT_STOCK_SIZE, INDEX_INPUT_STOCK_PAD,
-            INDEX_INPUT_STOCK_TEXT
+            cs.INDEX_INPUT_STOCK_SIZE, cs.INDEX_INPUT_STOCK_PAD,
+            cs.INDEX_INPUT_STOCK_TEXT
         )
 
     def render_percent_index(self) -> list:
         return self.render_base_index(
-            INDEX_INPUT_PERCENT_SIZE, INDEX_INPUT_PERCENT_PAD,
-            INDEX_INPUT_PERCENT_TEXT
+            cs.INDEX_INPUT_PERCENT_SIZE, cs.INDEX_INPUT_PERCENT_PAD,
+            cs.INDEX_INPUT_PERCENT_TEXT
         )
 
     def render_index(self) -> list:
@@ -182,20 +173,20 @@ class Section(Column):
         return index
 
     def render_record_list(self) -> list:
-        return [self.get_record_list().instance()]
+        return [self.get_record_list()]
 
     def render_save_as(self) -> list:
         return [
             SaveAs(
-                key=self.__key + SAVE_AS_BUTTON_KEY,
-                image_data=BUTTON_IMAGE,
-                image_size=BUTTON_IMAGE_SIZE,
-                pad=SAVE_AS_BUTTON_PAD,
-                button_text=SAVE_AS_BUTTON_TEXT,
-                tooltip=SAVE_AS_BUTTON_TOOLTIP,
+                key=self.__key + cs.SAVE_AS_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.SAVE_AS_BUTTON_PAD,
+                button_text=cs.SAVE_AS_BUTTON_TEXT,
+                tooltip=cs.SAVE_AS_BUTTON_TOOLTIP,
                 file_types=(('', '.csv'), ),
                 default_extension='.csv',
-                initial_folder=SAVE_AS_BUTTON_INITIAL_FOLDER,
+                initial_folder=cs.SAVE_AS_BUTTON_INITIAL_FOLDER,
                 target=(555666777, +2),
             )
         ]
@@ -217,40 +208,57 @@ class Section(Column):
         layout.append(self.render_record_list())
         return layout
 
+    def callback(self, func: str) -> bool:
+        if getattr(self, func)():
+            return True
+        return False
+
 
 class StockAndBuySection:
+    _CLEANER_OPTIONS = cs.STOCK_SECTION_CLEANER_OPTIONS
+
     def render_adder(self) -> list:
         return [
             Spin(
-                key=self.get_key() + ADDER_SPIN_KEY,
-                size=ADDER_SPIN_SIZE,
-                pad=ADDER_SPIN_PAD,
-                values=ADDER_SPIN_VALUES,
+                key=self.get_key() + cs.ADDER_SPIN_KEY,
+                size=cs.ADDER_SPIN_SIZE,
+                pad=cs.ADDER_SPIN_PAD,
+                values=cs.ADDER_SPIN_VALUES,
                 initial_value=0,
                 readonly=True
             ),
             Button(
-                key=self.get_key() + ADDER_BUTTON_KEY,
-                image_data=BUTTON_IMAGE,
-                image_size=BUTTON_IMAGE_SIZE,
-                pad=ADDER_BUTTON_PAD,
-                button_text=ADDER_BUTTON_TEXT,
-                tooltip=ADDER_BUTTON_TOOLTIP
+                key=self.get_key() + cs.ADDER_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.ADDER_BUTTON_PAD,
+                button_text=cs.ADDER_BUTTON_TEXT,
+                tooltip=cs.ADDER_BUTTON_TOOLTIP
             )
         ]
 
+    def add_records(self) -> bool:
+        how_many_add = int(MAIN[self.get_key() + ',spin_adder'].get())
+        self.get_record_list().add_records(how_many_add)
+        if how_many_add > 0:
+            return True
+        return False
+
 
 class StockSection(Section, StockAndBuySection):
+    _INDEX_NAME_SIZE = cs.INDEX_INPUT_STOCK_NAME_SIZE
+
     @classmethod
     def get_sort_values(cls) -> list:
-        return SORTER_COMBO_STOCK_VALUES
+        return cs.SORTER_COMBO_STOCK_VALUES
+
+    @classmethod
+    def get_record_list(cls) -> StockList:
+        return StockList.instance()
 
     def __init__(self):
-        Section.__init__(self, STOCKLIST_S_SIZE, STOCKLIST_S_PAD)
+        Section.__init__(self, cs.STOCKLIST_S_SIZE, cs.STOCKLIST_S_PAD)
         StockAndBuySection.__init__(self)
-
-    def get_record_list(self) -> RecordList:
-        return StockList
 
     def render_index(self) -> list:
         index = super().render_index()
@@ -259,9 +267,6 @@ class StockSection(Section, StockAndBuySection):
 
     def render_list(self) -> list:
         return [StockList.instance()]
-
-    def render_cleaner(self) -> list:
-        return super().render_cleaner(STOCK_SECTION_CLEANER_OPTIONS)
 
     def render_layout(self) -> list:
         layout = super().render_layout()
@@ -273,22 +278,27 @@ class StockSection(Section, StockAndBuySection):
 class CommerceSection(Section):
     @classmethod
     def render_layout_in_tab(cls) -> Tab:
-        layout = [[cls()]]
-        return Tab(cls.get_tab_title(), layout)
+        layout = [[cls.instance()]]
+        return Tab(
+            cls.get_tab_title(),
+            layout,
+            pad=cs.TAB_PAD,
+            border_width=cs.TAB_BORDER_WIDTH
+        )
 
     def __init__(self, size: tuple, pad: tuple):
         super().__init__(size, pad)
 
     def render_amount_index(self) -> list:
         return super().render_base_index(
-            INDEX_INPUT_AMOUNT_SIZE, INDEX_INPUT_AMOUNT_PAD,
-            INDEX_INPUT_AMOUNT_TEXT
+            cs.INDEX_INPUT_AMOUNT_SIZE, cs.INDEX_INPUT_AMOUNT_PAD,
+            cs.INDEX_INPUT_AMOUNT_TEXT
         )
 
     def render_final_price_index(self) -> list:
         return self.render_base_index(
-            INDEX_INPUT_FINAL_PRICE_SIZE, INDEX_INPUT_FINAL_PRICE_PAD,
-            INDEX_INPUT_FINAL_PRICE_TEXT
+            cs.INDEX_INPUT_FINAL_PRICE_SIZE, cs.INDEX_INPUT_FINAL_PRICE_PAD,
+            cs.INDEX_INPUT_FINAL_PRICE_TEXT
         )
 
     def render_index(self) -> list:
@@ -300,12 +310,12 @@ class CommerceSection(Section):
     def render_commerce(self) -> list:
         return [
             Button(
-                key=self.get_key() + COMMERCE_BUTTON_KEY,
-                image_data=BUTTON_IMAGE,
-                image_size=BUTTON_IMAGE_SIZE,
-                pad=COMMERCE_BUTTON_PAD,
-                button_text=COMMERCE_BUTTON_TEXT,
-                tooltip=COMMERCE_BUTTON_TOOLTIP
+                key=self.get_key() + cs.COMMERCE_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.COMMERCE_BUTTON_PAD,
+                button_text=cs.COMMERCE_BUTTON_TEXT,
+                tooltip=cs.COMMERCE_BUTTON_TOOLTIP
             )
         ]
 
@@ -313,33 +323,30 @@ class CommerceSection(Section):
         return [
             Text(text='$'),
             Text(
-                key=self.get_key() + TOTAL_PRICE_KEY,
-                size=TOTAL_PRICE_SIZE,
-                pad=TOTAL_PRICE_PAD
+                key=self.get_key() + cs.TOTAL_PRICE_KEY,
+                size=cs.TOTAL_PRICE_SIZE,
+                pad=cs.TOTAL_PRICE_PAD
             )
         ]
 
     def render_pre_visualizator(self) -> list:
         return [
             Button(
-                key=self.get_key() + PRE_VISULIZATOR_BUTTON_KEY,
-                image_data=BUTTON_IMAGE,
-                image_size=BUTTON_IMAGE_SIZE,
-                pad=PRE_VISULIZATOR_BUTTON_PAD,
-                button_text=PRE_VISULIZATOR_BUTTON_TEXT,
-                tooltip=PRE_VISULIZATOR_BUTTON_TOOLTIP
+                key=self.get_key() + cs.PRE_VISULIZATOR_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.PRE_VISULIZATOR_BUTTON_PAD,
+                button_text=cs.PRE_VISULIZATOR_BUTTON_TEXT,
+                tooltip=cs.PRE_VISULIZATOR_BUTTON_TOOLTIP
             )
         ]
-
-    def render_cleaner(self) -> list:
-        return super().render_cleaner(STOCK_SECTION_CLEANER_OPTIONS)
 
     def render_layout(self) -> list:
         """
         [
             [
                 finder, sorter, cleaner, save_as,
-                pre_visualizator, total_price, commerce
+                pre_visualizator, cs.total_price, commerce
             ],
             [index, apply],
             [record_list]
@@ -354,19 +361,23 @@ class CommerceSection(Section):
 
 
 class SaleSection(CommerceSection):
+    _INDEX_NAME_SIZE = cs.INDEX_INPUT_SALE_NAME_SIZE
+    _CLEANER_OPTIONS = cs.SALE_SECTION_CLEANER_OPTIONS
+
     @classmethod
     def get_sort_values(cls) -> list:
-        return SORTER_COMBO_SALES_VALUES
+        return cs.SORTER_COMBO_SALES_VALUES
 
     @classmethod
     def get_tab_title(cls) -> str:
         return 'VENTAS'
 
-    def __init__(self):
-        super().__init__(SALELIST_S_SIZE, SALELIST_S_PAD)
-
+    @classmethod
     def get_record_list(self) -> RecordList:
-        return SaleList
+        return SaleList.instance()
+
+    def __init__(self):
+        super().__init__(cs.SALELIST_S_SIZE, cs.SALELIST_S_PAD)
 
     def render_index(self) -> list:
         index = super().render_index()
@@ -375,25 +386,30 @@ class SaleSection(CommerceSection):
 
 
 class BuySection(CommerceSection, StockAndBuySection):
+    _INDEX_NAME_SIZE = cs.INDEX_INPUT_BUY_NAME_SIZE
+
     @classmethod
     def get_sort_values(cls) -> list:
-        return SORTER_COMBO_BUYS_VALUES
+        return cs.SORTER_COMBO_BUYS_VALUES
 
     @classmethod
     def get_tab_title(cls) -> str:
         return 'COMPRAS'
 
-    def __init__(self):
-        CommerceSection.__init__(self, BUYSECTION_S_SIZE, BUYSECTION_S_PAD)
-        StockAndBuySection.__init__(self)
+    @classmethod
+    def get_record_list(cls):
+        return BuyList.instance()
 
-    def get_record_list(self) -> RecordList:
-        return BuyList
+    def __init__(self):
+        CommerceSection.__init__(
+            self, cs.BUYSECTION_S_SIZE, cs.BUYSECTION_S_PAD
+        )
+        StockAndBuySection.__init__(self)
 
     def render_supplier_index(self) -> list:
         return CommerceSection.render_base_index(
-            self, INDEX_INPUT_SUPPLIER_SIZE, INDEX_INPUT_SUPPLIER_PAD,
-            INDEX_INPUT_SUPPLIER_TEXT
+            self, cs.INDEX_INPUT_SUPPLIER_SIZE, cs.INDEX_INPUT_SUPPLIER_PAD,
+            cs.INDEX_INPUT_SUPPLIER_TEXT
         )
 
     def render_index(self) -> list:
@@ -411,15 +427,9 @@ class BuySection(CommerceSection, StockAndBuySection):
 
 
 class Main(Window):
-    _instance = None
-
-    @classmethod
-    def instance(cls):
-        if not cls._instance:
-            cls._instance = cls.new()
-        return cls._instance
-
     def __init__(self):
+        global MAIN
+        MAIN = self
         FileManager.db_control()
         theme('PapelerAbasto')
         StockSection.key('StockSection.instance()')
@@ -428,8 +438,8 @@ class Main(Window):
         super().__init__(
             self.render_layout(),
             font=('Helvetica 16'),
-            size=WINDOWS_SIZE,
-            location=WINDOWS_LOCATION
+            size=cs.WINDOWS_SIZE,
+            location=cs.WINDOWS_LOCATION
         )
         self.run()
 
@@ -440,16 +450,40 @@ class Main(Window):
                 BuySection.render_layout_in_tab()
             ]
         ]
-        layout = [[StockSection()], [TabGroup(tab_group)]]
+        layout = [
+            [StockSection.instance()],
+            [
+                TabGroup(
+                    tab_group,
+                    pad=cs.TAB_GROUP_PAD,
+                    border_width=cs.TAB_GROUP_BORDER_WIDTH
+                )
+            ]
+        ]
         return layout
+
+    def close(self, timeout=0):
+        self.read(timeout=timeout)
+        super().close()
+        exit()
+
+    def restart(self):
+        Process(target=FileManager.restart).start()
+        self.close(2000)
 
     def run(self):
         while True:
             e, _ = self.read()
-            print(e)
-            if e == None:
-                self.close()
-                break
+            try:
+                var, func = e.split(',')
+                print('var: ', var, 'func: ,', func)
+                if getattr(eval(var), 'callback')(func):
+                    print('entrada')
+                    self.restart()
+            except:
+                if e == None:
+                    self.close()
+                    break
 
 
 if __name__ == '__main__':

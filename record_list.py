@@ -1,53 +1,33 @@
 from record import Record, StockRecord, SaleRecord, BuyRecord
-from PySimpleGUI import theme, Window, Column, Button
-from constants import (
-    JSON_STOCK_PATH,
-    JSON_SALES_PATH,
-    JSON_BUYS_PATH,
-    CSV_SALES_PATH,
-    CSV_BUYS_PATH,
-    JSON_PATHS,
-    RECORDLIST_COLUMN_SIZE,
-    RECORDLIST_COLUMN_PAD,
-    SALELIST_COLUMN_SIZE,
-    SALELIST_COLUMN_PAD,
-    BUYLIST_COLUMN_SIZE,
-    BUYLIST_COLUMN_PAD,
-    DATE,
-    TIME,
-    CSV_STOCK_HEADER,
-    CSV_SALES_HEADER,
-    CSV_BUYS_HEADER,
-    CSV_HEADER,
-)
+from PySimpleGUI import theme, Column, Button
+import constants as cs
 from json import load, dump
 from csv import writer
 import os
-from multiprocessing import Process
 from sys import platform
 
 
 class FileManager:
     @staticmethod
-    def restart(location=(20, 20)):
+    def restart(location=(0, 0)):
         if platform == "win32":
-            os.system("python record_list.py")
+            os.system("python gui.py")
         else:
-            os.system(f"python3 record_list.py {location[0]} {location[1]}")
+            os.system(f"python3 gui.py {location[0]} {location[1]}")
 
     @staticmethod
     def create_json_files():
-        for path in JSON_PATHS:
+        for path in cs.JSON_PATHS:
             with open(path, "w") as file:
                 dump([], file)
 
     @staticmethod
     def create_csv_files():
         FileManager.save_in_csv(
-            path=CSV_SALES_PATH, data=CSV_SALES_HEADER, mode="w"
+            path=cs.CSV_SALES_PATH, data=cs.CSV_SALES_HEADER, mode="w"
         )
         FileManager.save_in_csv(
-            path=CSV_BUYS_PATH, data=CSV_BUYS_HEADER, mode="w"
+            path=cs.CSV_BUYS_PATH, data=cs.CSV_BUYS_HEADER, mode="w"
         )
 
     @staticmethod
@@ -95,7 +75,9 @@ class RecordList(Column):
             scrollable=True,
             vertical_scroll_only=True,
         )
-        self.len = len(records)
+
+    def __len__(self) -> int:
+        return len(self.Rows)
 
     def _get_records(self) -> tuple[Record]:
         return tuple(map(lambda rc: rc[0], self.Rows))
@@ -108,10 +90,7 @@ class RecordList(Column):
 
     def _update_from_report(self, report: tuple):
         for i, rc in enumerate(self._get_records()):
-            rc.update_from_report(report[i])
-
-    def get_records_len(self) -> int:
-        return self.len
+            rc.upcs.date_from_report(report[i])
 
     def get_report(self) -> list[list]:
         return list(map(lambda rc: rc.get_report(), self._get_records()))
@@ -143,12 +122,12 @@ class RecordList(Column):
         return False
 
     def sort_list_min_max(self, field: int):
-        self._update_from_report(
+        self._upcs.date_from_report(
             sorted(self.get_report(), key=lambda rc: rc[field])
         )
 
     def sort_list_max_min(self, field: int):
-        self._update_from_report(
+        self._upcs.date_from_report(
             sorted(self.get_report(), key=lambda rc: rc[field], reverse=True)
         )
 
@@ -175,9 +154,7 @@ class RecordList(Column):
             rc.check()
 
     def save_in_json(self):
-        report = self.get_report()
-        self.len = len(self.get_report())
-        FileManager.save_in_json(self.get_json_path(), report)
+        FileManager.save_in_json(self.get_json_path(), self.get_report())
 
 
 class StockAndBuyList:
@@ -195,7 +172,6 @@ class StockAndBuyList:
             self.save_in_json()
 
     def add_records(self, how_many_add: int):
-        self.len += how_many_add
         report = self.get_report()
         for _ in range(how_many_add):
             report.append(self.get_class_record().get_empty_report())
@@ -208,7 +184,7 @@ class StockList(RecordList, StockAndBuyList):
         records = [
             [StockRecord(name, unit_price, stock, percent, check)]
             for name, unit_price, stock, percent, check in
-            FileManager.load(path=JSON_STOCK_PATH)
+            FileManager.load(path=cs.JSON_STOCK_PATH)
         ]
         return cls(records)
 
@@ -216,16 +192,16 @@ class StockList(RecordList, StockAndBuyList):
         RecordList.__init__(
             self,
             records=records,
-            size=RECORDLIST_COLUMN_SIZE,
-            pad=RECORDLIST_COLUMN_PAD,
+            size=cs.RECORDLIST_COLUMN_SIZE,
+            pad=cs.RECORDLIST_COLUMN_PAD,
         )
         StockAndBuyList.__init__(self)
 
     def get_json_path(self) -> str:
-        return JSON_STOCK_PATH
+        return cs.JSON_STOCK_PATH
 
     def get_csv_report(self) -> list[list]:
-        return CSV_STOCK_HEADER + list(
+        return cs.CSV_STOCK_HEADER + list(
             map(lambda rc: rc.get_csv_report(), self._get_records())
         )
 
@@ -266,16 +242,15 @@ class StockList(RecordList, StockAndBuyList):
             rc.apply_percent()
 
     def add_records_from_buys_report(self, buys_report: list):
-        self.len += len(buys_report)
         FileManager.save_in_json(
-            JSON_STOCK_PATH,
+            cs.JSON_STOCK_PATH,
             self.get_report() + buys_report
         )
 
     def update_record_from_buy_report(self, buy_report: list) -> bool:
         record = self.get_record(buy_report[0])
         if record:
-            record.update_from_buy(buy_report[1], buy_report[2])
+            record.upcs.date_from_buy(buy_report[1], buy_report[2])
             return False
         return True
 
@@ -285,7 +260,7 @@ class StockList(RecordList, StockAndBuyList):
 
     def receive_buys_report(self, buys_report: list):
         filtered_buys_report = list(
-            filter(self.update_record_from_buy_report, buys_report)
+            filter(self.upcs.date_record_from_buy_report, buys_report)
         )
         if filtered_buys_report:
             self.complete_buy_report(filtered_buys_report)
@@ -294,11 +269,11 @@ class StockList(RecordList, StockAndBuyList):
             self.save_in_json()
 
     def update_record_from_sale_report(self, sale_report: list):
-        self.get_record(sale_report[0]).update_from_sale(sale_report[1])
+        self.get_record(sale_report[0]).upcs.date_from_sale(sale_report[1])
 
     def receive_sales_report(self, sales_report: list):
         for sale_report in sales_report:
-            self.update_record_from_sale_report(sale_report)
+            self.upcs.date_record_from_sale_report(sale_report)
         self.save_in_json()
 
     def export(self, path: str):
@@ -378,7 +353,6 @@ class CommerceList(RecordList):
         super().__init__(records=records, size=size, pad=pad)
 
     def _remove_all_records(self):
-        self.len = 0
         self.Rows = []
 
     def get_sale_report(self) -> list:
@@ -388,7 +362,7 @@ class CommerceList(RecordList):
         return list(map(lambda rc: (rc.get_buy_report()), self._get_records()))
 
     def get_csv_report(self) -> list[list]:
-        return CSV_HEADER + list(
+        return cs.CSV_HEADER + list(
             map(lambda rc: rc.get_csv_report(), self._get_records())
         )
 
@@ -414,14 +388,13 @@ class CommerceList(RecordList):
     def update_existent_record(self, report: tuple) -> bool:
         existent_record = self.get_record(report[0])
         if existent_record:
-            existent_record.update_from_report(report)
+            existent_record.upcs.date_from_report(report)
             return False
         return True
 
     def pre_commerce_from_report(self, report: tuple):
-        filtered_report = list(filter(self.update_existent_record, report))
+        filtered_report = list(filter(self.upcs.date_existent_record, report))
         if filtered_report:
-            self.len += len(filtered_report)
             self.complete_pre_sell_report(filtered_report)
             FileManager.save_in_json(
                 path=self.get_json_path(),
@@ -448,20 +421,22 @@ class SaleList(CommerceList):
                     name, unit_price, stock, amount, final_price, percent, check
                 )
             ] for name, unit_price, stock, amount, final_price, percent, check
-            in FileManager.load(path=JSON_SALES_PATH)
+            in FileManager.load(path=cs.JSON_SALES_PATH)
         ]
         return cls(records)
 
     def __init__(self, records: list):
         super().__init__(
-            records=records, size=SALELIST_COLUMN_SIZE, pad=SALELIST_COLUMN_PAD
+            records=records,
+            size=cs.SALELIST_COLUMN_SIZE,
+            pad=cs.SALELIST_COLUMN_PAD
         )
 
     def get_csv_path(self):
-        return CSV_SALES_PATH
+        return cs.CSV_SALES_PATH
 
     def get_json_path(self):
-        return JSON_SALES_PATH
+        return cs.JSON_SALES_PATH
 
     def get_sale_report(self) -> tuple[tuple]:
         return tuple(map(lambda rc: rc.get_sale_report(), self._get_records()))
@@ -515,7 +490,7 @@ class BuyList(CommerceList, StockAndBuyList):
                     check,
                 )
             ] for name, unit_price, stock, amount, final_price, supplier,
-            percent, check in FileManager.load(path=JSON_BUYS_PATH)
+            percent, check in FileManager.load(path=cs.JSON_BUYS_PATH)
         ]
         return cls(records)
 
@@ -523,8 +498,8 @@ class BuyList(CommerceList, StockAndBuyList):
         CommerceList.__init__(
             self,
             records=records,
-            size=BUYLIST_COLUMN_SIZE,
-            pad=BUYLIST_COLUMN_PAD
+            size=cs.BUYLIST_COLUMN_SIZE,
+            pad=cs.BUYLIST_COLUMN_PAD
         )
         StockAndBuyList.__init__(self)
 
@@ -535,10 +510,10 @@ class BuyList(CommerceList, StockAndBuyList):
         return BuyRecord
 
     def get_csv_path(self) -> str:
-        return CSV_BUYS_PATH
+        return cs.CSV_BUYS_PATH
 
     def get_json_path(self) -> str:
-        return JSON_BUYS_PATH
+        return cs.JSON_BUYS_PATH
 
     def upload_commerce_report(self):
         StockList.instance().receive_buys_report(self.get_buy_report())
@@ -547,7 +522,7 @@ class BuyList(CommerceList, StockAndBuyList):
         for rc in StockList.instance().collect_unit_price_from_record_names(
             self.get_record_names()
         ):
-            self.get_record(rc[0]).update_unit_price(rc[1])
+            self.get_record(rc[0]).upcs.date_unit_price(rc[1])
 
     def complete_pre_sell_report(self, pre_sell_report: list):
         for report in pre_sell_report:
