@@ -90,7 +90,7 @@ class RecordList(Column):
 
     def _update_from_report(self, report: tuple):
         for i, rc in enumerate(self._get_records()):
-            rc.upcs.date_from_report(report[i])
+            rc.update_from_report(report[i])
 
     def get_report(self) -> list[list]:
         return list(map(lambda rc: rc.get_report(), self._get_records()))
@@ -121,14 +121,24 @@ class RecordList(Column):
             return True
         return False
 
-    def sort_list_min_max(self, field: int):
-        self._upcs.date_from_report(
-            sorted(self.get_report(), key=lambda rc: rc[field])
-        )
+    def get_search_index(self, name: str) -> int:
+        for i, rc in enumerate(self._get_records()):
+            if rc.name_comparisson(name):
+                return i
+        raise IndexError
 
-    def sort_list_max_min(self, field: int):
-        self._upcs.date_from_report(
-            sorted(self.get_report(), key=lambda rc: rc[field], reverse=True)
+    def search(self, name: str):
+        print(name)
+        rcs = self._get_records()
+        index = self.get_search_index(name)
+        rc_to_top = rcs[index].get_report()
+        for i in reversed(range(1, index + 1)):
+            rcs[i].update_from_report(rcs[i - 1].get_report())
+        rcs[0].update_from_report(rc_to_top)
+
+    def sort(self, field_calc: callable, field: int, reverse: bool=False):
+        self._update_from_report(
+            sorted(self.get_report(), key=lambda rc: field_calc(rc[field]), reverse=reverse)
         )
 
     def uncheck_records(self):
@@ -140,7 +150,6 @@ class RecordList(Column):
             for rc in reversed(self.Rows):
                 if rc[0].get_check():
                     self.Rows.remove(rc)
-            print(self.Rows)
             self.save_in_json()
             return True
         return False
@@ -164,12 +173,14 @@ class StockAndBuyList:
                 return True
         return False
 
-    def remove_empty_records(self):
+    def remove_empty_records(self) -> bool:
         if self.have_empty_records():
             for rc in reversed(self.Rows):
                 if rc[0].is_empty():
                     self.Rows.remove(rc)
             self.save_in_json()
+            return True
+        return False
 
     def add_records(self, how_many_add: int):
         report = self.get_report()
@@ -352,8 +363,11 @@ class CommerceList(RecordList):
     def __init__(self, records: list, size: tuple, pad: tuple):
         super().__init__(records=records, size=size, pad=pad)
 
-    def _remove_all_records(self):
-        self.Rows = []
+    def remove_all_records(self) -> bool:
+        if self.Rows:
+            self.Rows = []
+            return True
+        return False
 
     def get_sale_report(self) -> list:
         return list(map(lambda rc: (rc.get_sale_report()), self._get_records()))

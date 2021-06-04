@@ -9,6 +9,68 @@ from multiprocessing import Process
 MAIN = None
 
 
+class _Sorter:
+    def __init__(self):
+        pass
+
+    def sort_list_min_max(self, rc_list: RecordList, field: int):
+        rc_list.sort(self.field, field)
+
+    def sort_list_max_min(self, rc_list: RecordList, field: int):
+        rc_list.sort(self.field, field, True)
+
+
+class _StrSorter(_Sorter):
+    def field(self, field):
+        return field
+
+
+class _IntSorter(_Sorter):
+    def field(self, field):
+        try:
+            return int(field)
+        except:
+            return field
+
+
+class NOMBRE(_StrSorter): ...
+
+
+class PU(_IntSorter): ...
+
+
+class STOCK(_IntSorter): ...
+
+
+class CANTIDAD(_IntSorter): ...
+
+
+class PF(_IntSorter): ...
+
+
+class PROVEEDOR(_StrSorter): ...
+
+
+class _Remover:
+    def __init__(self):
+        pass
+
+
+class SELECCIONADOS(_Remover):
+    def remove_records(self, rc_list: RecordList) -> bool:
+        return rc_list.remove_checked_records()
+
+
+class VACÍOS(_Remover):
+    def remove_records(self, rc_list: RecordList) -> bool:
+        return rc_list.remove_empty_records()
+
+
+class TODOS(_Remover):
+    def remove_records(self, rc_list: RecordList) -> bool:
+        return rc_list.remove_all_records()
+
+
 class Section(Column):
     __key = None
     __instance = None
@@ -37,6 +99,8 @@ class Section(Column):
 
     def __init__(self, size: tuple, pad: tuple):
         super().__init__(layout=self.render_layout(), size=size, pad=pad)
+        self._remover = SELECCIONADOS()
+        self._sorter = NOMBRE()
 
     def __len__(self) -> int:
         return len(self.get_record_list())
@@ -68,7 +132,8 @@ class Section(Column):
                 size=cs.SORTER_COMBO_SIZE,
                 pad=cs.SORTER_COMBO_PAD,
                 tooltip=cs.SORTER_COMBO_TOOLTIP,
-                readonly=True
+                readonly=True,
+                enable_events=True
             ),
             Button(
                 key=self.__key + cs.SORTER_BUTTON_UP_KEY,
@@ -85,7 +150,7 @@ class Section(Column):
                 pad=cs.SORTER_BUTTON_PAD,
                 button_text=cs.SORTER_BUTTON_DOWN_TEXT,
                 tooltip=cs.SORTER_BUTTON_DOWN_TOOLTIP
-            ),
+            )
         ]
 
     def render_cleaner(self) -> list:
@@ -97,7 +162,8 @@ class Section(Column):
                 pad=cs.CLEANER_COMBO_PAD,
                 values=cleaner_options,
                 default_value=cleaner_options[0],
-                readonly=True
+                readonly=True,
+                enable_events=True
             ),
             Button(
                 key=self.__key + cs.CLEANER_BUTTON_KEY,
@@ -208,10 +274,37 @@ class Section(Column):
         layout.append(self.render_record_list())
         return layout
 
-    def callback(self, func: str) -> bool:
-        if getattr(self, func)():
-            return True
+    def get_sorter_option(self) -> str:
+        return MAIN[self.__key + ',sorter_option'].get()
+
+    def get_sort_index(self) -> int:
+        return cs.SORTER_COMBO_ALL_VALUES[self.get_sorter_option()]
+
+    def sorter_option(self) -> bool:
+        self._sorter = eval(self.get_sorter_option())()
         return False
+
+    def sort_list_min_max(self) -> bool:
+        self._sorter.sort_list_min_max(self.get_record_list(), self.get_sort_index())
+        return False
+
+    def sort_list_max_min(self) -> bool:
+        self._sorter.sort_list_max_min(self.get_record_list(), self.get_sort_index())
+        return False
+
+    def search(self) -> bool:
+        self.get_record_list().search(MAIN[self.__key + ',finder_input'].get())
+        return False
+
+    def cleaner_option(self) -> bool:
+        self._remover = eval(MAIN[self.__key + ',cleaner_option'].get())()
+        return False
+
+    def remove_records(self) -> bool:
+        return self._remover.remove_records(self.get_record_list())
+
+    def callback(self, func: str) -> bool:
+        return getattr(self, func)()
 
 
 class StockAndBuySection:
@@ -471,6 +564,11 @@ class Main(Window):
         Process(target=FileManager.restart).start()
         self.close(2000)
 
+    def save(self):
+        StockList.instance().save_in_json()
+        SaleList.instance().save_in_json()
+        BuyList.instance().save_in_json()
+
     def run(self):
         while True:
             e, _ = self.read()
@@ -478,10 +576,10 @@ class Main(Window):
                 var, func = e.split(',')
                 print('var: ', var, 'func: ,', func)
                 if getattr(eval(var), 'callback')(func):
-                    print('entrada')
                     self.restart()
             except:
                 if e == None:
+                    self.save()
                     self.close()
                     break
 

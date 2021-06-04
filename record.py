@@ -78,6 +78,9 @@ class Record(Column):
     def get_csv_report(self) -> list:
         return list(map(lambda field: field.get(), self._get_fields()[:-2]))
 
+    def name_comparisson(self, name: str) -> bool:
+        return self.Rows[0][0].get().upper() == name.upper()
+
     def indicate_issue(self, index: int, color: str = 'Red'):
         self._get_fields()[index].update(background_color=color)
 
