@@ -78,6 +78,9 @@ class Record(Column):
     def get_csv_report(self) -> list:
         return list(map(lambda field: field.get(), self._get_fields()[:-2]))
 
+    def have_percent_to_apply(self) -> bool:
+        return bool(self.get_percent())
+
     def name_comparisson(self, name: str) -> bool:
         return self.Rows[0][0].get().upper() == name.upper()
 

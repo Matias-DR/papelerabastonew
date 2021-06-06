@@ -246,7 +246,7 @@ class StockList(RecordList, StockAndBuyList):
         self.clear_issues()
         for rc in tuple(
             filter(
-                lambda rc: rc.passes_apply_percent_control(),
+                lambda rc: rc.passes_apply_percent_control() and rc.have_percent_to_apply(),
                 self._get_records()
             )
         ):

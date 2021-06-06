@@ -12510,7 +12510,7 @@ def SaveAs(
     s=(None, None),
     auto_size_button=None,
     button_color=None,
-    change_submits=False,
+    change_submits=True,
     enable_events=True,
     font=None,
     pad=None,

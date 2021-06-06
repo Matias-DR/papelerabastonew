@@ -8,6 +8,9 @@ from multiprocessing import Process
 
 MAIN = None
 
+# - para las clases tipo herramienta 'strategy' hacer una unica por cada categoría que las contenga y tenga alguna funcion que las devuelva segun un string indicado por parametro
+# - para la seccion compra y venta, definir una funcion que se ejecute al principio para realizar el primer caclulo de todos sus registros
+
 
 class _Sorter:
     def __init__(self):
@@ -33,22 +36,28 @@ class _IntSorter(_Sorter):
             return field
 
 
-class NOMBRE(_StrSorter): ...
+class NOMBRE(_StrSorter):
+    ...
 
 
-class PU(_IntSorter): ...
+class PU(_IntSorter):
+    ...
 
 
-class STOCK(_IntSorter): ...
+class STOCK(_IntSorter):
+    ...
 
 
-class CANTIDAD(_IntSorter): ...
+class CANTIDAD(_IntSorter):
+    ...
 
 
-class PF(_IntSorter): ...
+class PF(_IntSorter):
+    ...
 
 
-class PROVEEDOR(_StrSorter): ...
+class PROVEEDOR(_StrSorter):
+    ...
 
 
 class _Remover:
@@ -253,7 +262,7 @@ class Section(Column):
                 file_types=(('', '.csv'), ),
                 default_extension='.csv',
                 initial_folder=cs.SAVE_AS_BUTTON_INITIAL_FOLDER,
-                target=(555666777, +2),
+                target=(555666777, self.get_save_target())
             )
         ]
 
@@ -274,6 +283,9 @@ class Section(Column):
         layout.append(self.render_record_list())
         return layout
 
+    def get_save_target(self) -> int:
+        return cs.DEFAULT_SAVE_TARGET
+
     def get_sorter_option(self) -> str:
         return MAIN[self.__key + ',sorter_option'].get()
 
@@ -285,11 +297,15 @@ class Section(Column):
         return False
 
     def sort_list_min_max(self) -> bool:
-        self._sorter.sort_list_min_max(self.get_record_list(), self.get_sort_index())
+        self._sorter.sort_list_min_max(
+            self.get_record_list(), self.get_sort_index()
+        )
         return False
 
     def sort_list_max_min(self) -> bool:
-        self._sorter.sort_list_max_min(self.get_record_list(), self.get_sort_index())
+        self._sorter.sort_list_max_min(
+            self.get_record_list(), self.get_sort_index()
+        )
         return False
 
     def search(self) -> bool:
@@ -302,6 +318,12 @@ class Section(Column):
 
     def remove_records(self) -> bool:
         return self._remover.remove_records(self.get_record_list())
+
+    def export(self) -> bool:
+        self.get_record_list().export(
+            MAIN.ReturnValuesDictionary[self.__key + cs.SAVE_AS_BUTTON_KEY]
+        )
+        return False
 
     def callback(self, func: str) -> bool:
         return getattr(self, func)()
@@ -366,6 +388,10 @@ class StockSection(Section, StockAndBuySection):
         layout[0] += self.render_adder()
         layout[0] += self.render_save_as()
         return layout
+
+    def apply(self) -> bool:
+        self.get_record_list().apply_percent_to_records()
+        return False
 
 
 class CommerceSection(Section):
@@ -452,6 +478,10 @@ class CommerceSection(Section):
         layout[0] += self.render_commerce()
         return layout
 
+    def apply(self) -> bool:
+        self.get_record_list().apply_final_price()
+        return False
+
 
 class SaleSection(CommerceSection):
     _INDEX_NAME_SIZE = cs.INDEX_INPUT_SALE_NAME_SIZE
@@ -471,6 +501,9 @@ class SaleSection(CommerceSection):
 
     def __init__(self):
         super().__init__(cs.SALELIST_S_SIZE, cs.SALELIST_S_PAD)
+
+    def get_save_target(self) -> int:
+        return 7
 
     def render_index(self) -> list:
         index = super().render_index()
@@ -514,8 +547,8 @@ class BuySection(CommerceSection, StockAndBuySection):
     def render_layout(self) -> list:
         layout = CommerceSection.render_layout(self)
         adder = self.render_adder()
-        layout[0].insert(6, adder[-1])
-        layout[0].insert(6, adder[0])
+        layout[0].insert(7, adder[-1])
+        layout[0].insert(7, adder[0])
         return layout
 
 
@@ -574,7 +607,7 @@ class Main(Window):
             e, _ = self.read()
             try:
                 var, func = e.split(',')
-                print('var: ', var, 'func: ,', func)
+                print('var: ', var, '; func: ,', func)
                 if getattr(eval(var), 'callback')(func):
                     self.restart()
             except:

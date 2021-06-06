@@ -103,6 +103,7 @@ TAB_BORDER_WIDTH =  0
 # ------------------------------------------ #
 #             SECTION PARAMETERS             #
 # ------------------------------------------ #
+DEFAULT_SAVE_TARGET = 9
 S_TMP_SIZE = (5, 5)
 S_TMP_PAD = ((0, 0), (0, 0))
 FINDER_INPUT_KEY = ',finder_input'
@@ -182,7 +183,7 @@ ADDER_BUTTON_TEXT = '＋'
 ADDER_BUTTON_TOOLTIP = '',
 STOCK_SECTION_CLEANER_OPTIONS = ['SELECCIONADOS', 'VACÍOS']
 SALE_SECTION_CLEANER_OPTIONS = ['SELECCIONADOS']
-SAVE_AS_BUTTON_KEY = ',save_as'
+SAVE_AS_BUTTON_KEY = ',export'
 SAVE_AS_BUTTON_PAD = S_TMP_PAD
 SAVE_AS_BUTTON_TEXT = '💾'
 SAVE_AS_BUTTON_TOOLTIP = ''
