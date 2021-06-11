@@ -14,7 +14,7 @@ class FileManager:
         if platform == "win32":
             os.system("python gui.py")
         else:
-            os.system(f"python3 gui.py {location[0]} {location[1]}")
+            os.system(f"python3.9 gui.py {location[0]} {location[1]}")
 
     def create_json_files():
         for path in cs.JSON_PATHS:
