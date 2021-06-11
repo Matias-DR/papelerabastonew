@@ -479,7 +479,7 @@ MESSAGE_BOX_LINE_WIDTH = 60
 # Key representing a Read timeout
 EVENT_TIMEOUT = TIMEOUT_EVENT = TIMEOUT_KEY = '__TIMEOUT__'
 WIN_CLOSED = WINDOW_CLOSED = None
-WINDOW_CLOSE_ATTEMPTED_EVENT = WIN_X_EVENT = WIN_CLOSE_ATTEMPTED_EVENT = '-WINDOW CLOSE ATTEMPTED-'
+WINDOW_CLOSE_ATTEMPTED_EVENT = WIN_X_EVENT = WIN_CLOSE_ATTEMPTED_EVENT = '__EXIT__'
 
 TITLEBAR_MINIMIZE_KEY = '__TITLEBAR MINIMIZE__'
 TITLEBAR_MAXIMIZE_KEY = '__TITLEBAR MAXIMIZE__'
@@ -9237,7 +9237,7 @@ class Window:
         ttk_theme=None,
         use_ttk_buttons=None,
         modal=False,
-        enable_close_attempted_event=False,
+        enable_close_attempted_event=True,
         titlebar_background_color=None,
         titlebar_text_color=None,
         titlebar_font=None,

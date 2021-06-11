@@ -9,6 +9,7 @@ from sys import platform
 
 
 class FileManager:
+    @staticmethod
     def restart(location=(0, 0)):
         if platform == "win32":
             os.system("python gui.py")

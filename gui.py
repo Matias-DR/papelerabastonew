@@ -694,8 +694,11 @@ class Main(Window):
                 if getattr(eval(var), 'callback')(func):
                     self.restart()
             except:
-                if e == None:
+                if e == '__EXIT__':
                     self.save()
+                    self.close()
+                    break
+                if e is None:
                     self.close()
                     break
 
