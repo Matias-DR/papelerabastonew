@@ -18969,7 +18969,7 @@ LOOK_AND_FEEL_TABLE = {
     "PapelerAbasto":
         {
             "BACKGROUND": '#232323',
-            "TEXT": COLOR_SYSTEM_DEFAULT,
+            "TEXT": 'White',
             "INPUT": COLOR_SYSTEM_DEFAULT,
             "TEXT_INPUT": COLOR_SYSTEM_DEFAULT,
             "SCROLL": COLOR_SYSTEM_DEFAULT,

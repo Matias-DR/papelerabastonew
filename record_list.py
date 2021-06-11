@@ -1,3 +1,4 @@
+from subprocess import call
 from record import Record, StockRecord, SaleRecord, BuyRecord
 from PySimpleGUI import theme, Column, Button
 import constants as cs
@@ -8,20 +9,17 @@ from sys import platform
 
 
 class FileManager:
-    @staticmethod
     def restart(location=(0, 0)):
         if platform == "win32":
             os.system("python gui.py")
         else:
             os.system(f"python3 gui.py {location[0]} {location[1]}")
 
-    @staticmethod
     def create_json_files():
         for path in cs.JSON_PATHS:
             with open(path, "w") as file:
                 dump([], file)
 
-    @staticmethod
     def create_csv_files():
         FileManager.save_in_csv(
             path=cs.CSV_SALES_PATH, data=cs.CSV_SALES_HEADER, mode="w"
@@ -30,24 +28,25 @@ class FileManager:
             path=cs.CSV_BUYS_PATH, data=cs.CSV_BUYS_HEADER, mode="w"
         )
 
-    @staticmethod
+    def create_theme_file():
+        with open('./db/THEME', 'w') as file:
+            file.write('PapelerAbasto')
+
     def db_control():
         if not os.path.isdir("./db"):
             os.mkdir("./db")
             FileManager.create_json_files()
             FileManager.create_csv_files()
+            FileManager.create_theme_file()
 
-    @staticmethod
     def load(path: str):
         with open(path) as file:
             return load(file)
 
-    @staticmethod
     def save_in_json(path: str, data):
         with open(path, "w") as file:
             dump(data, file, indent=4)
 
-    @staticmethod
     def save_in_csv(path: str, data: list, mode: str = "a"):
         with open(path, mode, newline="") as f:
             wr = writer(
@@ -56,6 +55,17 @@ class FileManager:
             )
             for line in data:
                 wr.writerow(line)
+
+    def load_theme():
+        with open('./db/THEME') as file:
+            return file.read()
+
+    def change_theme():
+        with open('./db/THEME', 'w') as file:
+            if theme() == 'PapelerAbasto':
+                file.write('Default1')
+            else:
+                file.write('PapelerAbasto')
 
 
 class RecordList(Column):
@@ -136,9 +146,13 @@ class RecordList(Column):
             rcs[i].update_from_report(rcs[i - 1].get_report())
         rcs[0].update_from_report(rc_to_top)
 
-    def sort(self, field_calc: callable, field: int, reverse: bool=False):
+    def sort(self, field_calc: callable, field: int, reverse: bool = False):
         self._update_from_report(
-            sorted(self.get_report(), key=lambda rc: field_calc(rc[field]), reverse=reverse)
+            sorted(
+                self.get_report(),
+                key=lambda rc: field_calc(rc[field]),
+                reverse=reverse
+            )
         )
 
     def uncheck_records(self):
@@ -219,23 +233,20 @@ class StockList(RecordList, StockAndBuyList):
     def get_class_record(self) -> Record:
         return StockRecord
 
-    def passes_pre_sale_control(self) -> bool:
+    def passes_pre_commerce_control(self, control: str) -> bool:
         if self._have_checked_records():
             self.clear_issues()
             for rc in self.get_checked_records():
-                if not rc.passes_pre_sale_control():
+                if not getattr(rc, control)():
                     return False
             return True
         return False
 
+    def passes_pre_sale_control(self) -> bool:
+        return self.passes_pre_commerce_control('passes_pre_sale_control')
+
     def passes_pre_buy_control(self) -> bool:
-        if self._have_checked_records():
-            self.clear_issues()
-            for rc in self.get_checked_records():
-                if not rc.passes_pre_buy_control():
-                    return False
-            return True
-        return False
+        return self.passes_pre_commerce_control('passes_pre_buy_control')
 
     def passes_stock_control(self):
         self.clear_issues()
@@ -246,8 +257,8 @@ class StockList(RecordList, StockAndBuyList):
         self.clear_issues()
         for rc in tuple(
             filter(
-                lambda rc: rc.passes_apply_percent_control() and rc.have_percent_to_apply(),
-                self._get_records()
+                lambda rc: rc.passes_apply_percent_control() and rc.
+                have_percent_to_apply(), self._get_records()
             )
         ):
             rc.apply_percent()
@@ -261,7 +272,7 @@ class StockList(RecordList, StockAndBuyList):
     def update_record_from_buy_report(self, buy_report: list) -> bool:
         record = self.get_record(buy_report[0])
         if record:
-            record.upcs.date_from_buy(buy_report[1], buy_report[2])
+            record.update_from_buy(buy_report[1], buy_report[2])
             return False
         return True
 
@@ -271,7 +282,7 @@ class StockList(RecordList, StockAndBuyList):
 
     def receive_buys_report(self, buys_report: list):
         filtered_buys_report = list(
-            filter(self.upcs.date_record_from_buy_report, buys_report)
+            filter(self.update_record_from_buy_report, buys_report)
         )
         if filtered_buys_report:
             self.complete_buy_report(filtered_buys_report)
@@ -280,11 +291,12 @@ class StockList(RecordList, StockAndBuyList):
             self.save_in_json()
 
     def update_record_from_sale_report(self, sale_report: list):
-        self.get_record(sale_report[0]).upcs.date_from_sale(sale_report[1])
+        self.get_record(sale_report[0]).update_from_sale(sale_report[1])
 
     def receive_sales_report(self, sales_report: list):
+        print(sales_report)
         for sale_report in sales_report:
-            self.upcs.date_record_from_sale_report(sale_report)
+            self.update_record_from_sale_report(sale_report)
         self.save_in_json()
 
     def export(self, path: str):
@@ -298,19 +310,21 @@ class StockList(RecordList, StockAndBuyList):
             )
         )
 
-    def pre_sell(self):
+    def pre_commerce(
+        self, pre_commerce_control: callable, where_to_trade: callable
+    ) -> bool:
         self.save_in_json()
-        if self.passes_pre_sale_control():
-            SaleList.instance().pre_commerce_from_report(
+        if pre_commerce_control():
+            return where_to_trade.instance().pre_commerce_from_report(
                 self.get_pre_commerce_report()
             )
+        return False
 
-    def pre_buy(self):
-        self.save_in_json()
-        if self.passes_pre_buy_control():
-            BuyList.instance().pre_commerce_from_report(
-                self.get_pre_commerce_report()
-            )
+    def pre_sell(self) -> bool:
+        return self.pre_commerce(self.passes_pre_sale_control, SaleList)
+
+    def pre_buy(self) -> bool:
+        return self.pre_commerce(self.passes_pre_buy_control, BuyList)
 
     def secure_mode(self):
         StockRecord.change_secure_mode()
@@ -322,29 +336,43 @@ class StockList(RecordList, StockAndBuyList):
             return True
         return False
 
-    def collect_unit_price_from_record_name(self, name: str) -> tuple:
-        return (name, self.get_record(name).get_unit_price())
+    def collect_value(self, name: str, value_method: str) -> tuple:
+        return (name, getattr(self.get_record(name), value_method)())
 
-    def collect_unit_price_from_record_names(self, names: tuple) -> tuple:
+    def collect_values(self, names: tuple, collect_method: str) -> tuple:
         return tuple(
             map(
-                self.collect_unit_price_from_record_name,
+                getattr(self, collect_method),
                 list(set(self.get_record_names()).intersection(set(names)))
             )
         )
 
+    def collect_unit_price_from_record_name(self, name: str) -> tuple:
+        return self.collect_value(name, 'get_unit_price')
+
+    def collect_unit_price_from_record_names(self, names: tuple) -> tuple:
+        return self.collect_values(names, 'collect_unit_price_from_record_name')
+
+    def collect_stock_from_record_name(self, name: str) -> tuple:
+        return self.collect_value(name, 'get_stock')
+
+    def collect_stock_from_record_names(self, names: tuple) -> tuple:
+        return self.collect_values(names, 'collect_stock_from_record_name')
+
     def passes_buy_control(self, record_names: tuple) -> bool:
+        control = True
         self.clear_issues()
         for record_name in record_names:
             record = self.get_record(record_name)
             if record:
                 if record.passes_control():
-                    return True
+                    control = True
                 else:
                     return False
-        return True
+        return control
 
     def passes_sale_control(self, record_names: tuple) -> bool:
+        control = True
         self.clear_issues()
         for record_name in record_names:
             record = self.get_record(record_name)
@@ -353,10 +381,12 @@ class StockList(RecordList, StockAndBuyList):
                     if not record.have_stock():
                         record.indicate_issue(2)
                         return False
-                    return True
+                    control = True
                 else:
                     return False
-        return True
+            else:
+                return False
+        return control
 
 
 class CommerceList(RecordList):
@@ -376,7 +406,9 @@ class CommerceList(RecordList):
         return list(map(lambda rc: (rc.get_buy_report()), self._get_records()))
 
     def get_csv_report(self) -> list[list]:
-        return cs.CSV_HEADER + list(
+        header = cs.CSV_HEADER
+        header[0].append(self.apply_final_price())
+        return header + list(
             map(lambda rc: rc.get_csv_report(), self._get_records())
         )
 
@@ -402,20 +434,22 @@ class CommerceList(RecordList):
     def update_existent_record(self, report: tuple) -> bool:
         existent_record = self.get_record(report[0])
         if existent_record:
-            existent_record.upcs.date_from_report(report)
+            existent_record.update_from_report(report)
             return False
         return True
 
-    def pre_commerce_from_report(self, report: tuple):
-        filtered_report = list(filter(self.upcs.date_existent_record, report))
+    def pre_commerce_from_report(self, report: tuple) -> bool:
+        filtered_report = list(filter(self.update_existent_record, report))
         if filtered_report:
             self.complete_pre_sell_report(filtered_report)
             FileManager.save_in_json(
                 path=self.get_json_path(),
                 data=filtered_report + self.get_report()
             )
+            return True
+        return False
 
-    def passes_have_amount_control(self) -> bool:
+    def passes_amount_control(self) -> bool:
         for rc in self.get_checked_records():
             if not rc.get_amount() > 0:
                 rc.indicate_issue(3)
@@ -476,16 +510,26 @@ class SaleList(CommerceList):
         for report in pre_sell_report:
             report += [0, 0, 0, False]
 
+    def existence_control(self) -> bool:
+        for rc in self.get_checked_records():
+            if not StockList.instance().have_record(rc.get_name()):
+                # rc.indicate_issue(0, 'Orange') NO SE PUEDE ACTUALIZAR EL COLOR DE UN INPUT READOLNY, EN TODO CASO INVESTIGAR
+                return False
+        return True
+
     def sell_records(self):
-        if self.passes_control():
-            if self.passes_have_amount_control():
-                if StockList.instance().passes_sale_control(
-                    self.get_checked_record_names()
-                ):
-                    self.upload_commerce_report()
-                    self.save_in_csv()
-                    self.remove_checked_records()
-                    self.save_in_json()
+        if self.existence_control():
+            if self.passes_control():
+                if self.passes_amount_control():
+                    if StockList.instance().passes_sale_control(
+                        self.get_checked_record_names()
+                    ):
+                        self.upload_commerce_report()
+                        self.save_in_csv()
+                        self.remove_checked_records()
+                        self.save_in_json()
+                        return True
+        return False
 
 
 class BuyList(CommerceList, StockAndBuyList):
@@ -532,19 +576,26 @@ class BuyList(CommerceList, StockAndBuyList):
     def upload_commerce_report(self):
         StockList.instance().receive_buys_report(self.get_buy_report())
 
+    def collect(self, collect_method: str, update_method: str):
+        for rc in getattr(StockList.instance(),
+                          collect_method)(self.get_record_names()):
+            getattr(self.get_record(rc[0]), update_method)(rc[1])
+
     def collect_unit_prices(self):
-        for rc in StockList.instance().collect_unit_price_from_record_names(
-            self.get_record_names()
-        ):
-            self.get_record(rc[0]).upcs.date_unit_price(rc[1])
+        self.collect(
+            'collect_unit_price_from_record_names', 'update_unit_price'
+        )
+
+    def collect_stock(self):
+        self.collect('collect_stock_from_record_names', 'update_stock')
 
     def complete_pre_sell_report(self, pre_sell_report: list):
         for report in pre_sell_report:
             report += [0, 0, '', 0, False]
 
-    def buy_records(self):
+    def buy_records(self) -> bool:
         if self.passes_control():
-            if self.passes_have_amount_control():
+            if self.passes_amount_control():
                 if StockList.instance().passes_buy_control(
                     self.get_checked_record_names()
                 ):
@@ -552,3 +603,5 @@ class BuyList(CommerceList, StockAndBuyList):
                     self.save_in_csv()
                     self.remove_checked_records()
                     self.save_in_json()
+                    return True
+        return False

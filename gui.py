@@ -8,8 +8,8 @@ from multiprocessing import Process
 
 MAIN = None
 
-# - para las clases tipo herramienta 'strategy' hacer una unica por cada categoría que las contenga y tenga alguna funcion que las devuelva segun un string indicado por parametro
-# - para la seccion compra y venta, definir una funcion que se ejecute al principio para realizar el primer caclulo de todos sus registros
+# - tarea de refactoring: para las clases tipo herramienta 'strategy' hacer una unica por cada categoría que las contenga y tenga alguna funcion que las devuelva segun un string indicado por parametro
+# - hacer que el botón de guardado una vez que guarde el archvio csv, lo ejecute (pasaría a encargarse de dos tareas, guardarlo y visualizarlo)
 
 
 class _Sorter:
@@ -266,6 +266,18 @@ class Section(Column):
             )
         ]
 
+    def render_uncheck(self) -> list:
+        return [
+            Button(
+                key=self.__key + cs.UNCHECK_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.UNCHECK_BUTTON_PAD,
+                button_text=cs.UNCHECK_BUTTON_TEXT,
+                tooltip=cs.UNCHECK_BUTTON_TOOLTIP
+            )
+        ]
+
     def render_layout(self) -> list:
         """
         [
@@ -276,6 +288,7 @@ class Section(Column):
         """
         layout = []
         layout.append(self.render_finder())
+        layout[0] += self.render_uncheck()
         layout[0] += self.render_sorter()
         layout[0] += self.render_cleaner()
         layout.append(self.render_index())
@@ -323,6 +336,10 @@ class Section(Column):
         self.get_record_list().export(
             MAIN.ReturnValuesDictionary[self.__key + cs.SAVE_AS_BUTTON_KEY]
         )
+        return False
+
+    def uncheck_records(self) -> bool:
+        self.get_record_list().uncheck_records()
         return False
 
     def callback(self, func: str) -> bool:
@@ -375,6 +392,26 @@ class StockSection(Section, StockAndBuySection):
         Section.__init__(self, cs.STOCKLIST_S_SIZE, cs.STOCKLIST_S_PAD)
         StockAndBuySection.__init__(self)
 
+    def render_pre_commerce(self) -> list:
+        return [
+            Button(
+                key=self.get_key() + cs.PRE_BUY_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.PRE_BUY_BUTTON_PAD,
+                button_text=cs.PRE_BUY_BUTTON_TEXT,
+                tooltip=cs.PRE_BUY_BUTTON_TOOLTIP
+            ),
+            Button(
+                key=self.get_key() + cs.PRE_SELL_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.PRE_SELL_BUTTON_PAD,
+                button_text=cs.PRE_SELL_BUTTON_TEXT,
+                tooltip=cs.PRE_SELL_BUTTON_TOOLTIP
+            )
+        ]
+
     def render_index(self) -> list:
         index = super().render_index()
         index += self.render_percent_index()
@@ -383,15 +420,39 @@ class StockSection(Section, StockAndBuySection):
     def render_list(self) -> list:
         return [StockList.instance()]
 
+    def render_theme(self) -> list:
+        return [
+            Button(
+                key=self.get_key() + cs.THEME_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.THEME_BUTTON_PAD,
+                button_text=cs.THEME_BUTTON_TEXT,
+                tooltip=cs.THEME_BUTTON_TOOLTIP
+            )
+        ]
+
     def render_layout(self) -> list:
         layout = super().render_layout()
         layout[0] += self.render_adder()
+        layout[0] += self.render_pre_commerce()
         layout[0] += self.render_save_as()
+        layout[0] += self.render_theme()
         return layout
+
+    def change_theme(self) -> bool:
+        FileManager.change_theme()
+        return True
 
     def apply(self) -> bool:
         self.get_record_list().apply_percent_to_records()
         return False
+
+    def pre_sell(self) -> bool:
+        return self.get_record_list().pre_sell()
+
+    def pre_buy(self) -> bool:
+        return self.get_record_list().pre_buy()
 
 
 class CommerceSection(Section):
@@ -448,18 +509,6 @@ class CommerceSection(Section):
             )
         ]
 
-    def render_pre_visualizator(self) -> list:
-        return [
-            Button(
-                key=self.get_key() + cs.PRE_VISULIZATOR_BUTTON_KEY,
-                image_data=cs.BUTTON_IMAGE,
-                image_size=cs.BUTTON_IMAGE_SIZE,
-                pad=cs.PRE_VISULIZATOR_BUTTON_PAD,
-                button_text=cs.PRE_VISULIZATOR_BUTTON_TEXT,
-                tooltip=cs.PRE_VISULIZATOR_BUTTON_TOOLTIP
-            )
-        ]
-
     def render_layout(self) -> list:
         """
         [
@@ -473,13 +522,14 @@ class CommerceSection(Section):
         """
         layout = super().render_layout()
         layout[0] += self.render_save_as()
-        layout[0] += self.render_pre_visualizator()
         layout[0] += self.render_total_price()
         layout[0] += self.render_commerce()
         return layout
 
     def apply(self) -> bool:
-        self.get_record_list().apply_final_price()
+        MAIN[self.get_key() + cs.TOTAL_PRICE_KEY].update(
+            int(self.get_record_list().apply_final_price())
+        )
         return False
 
 
@@ -510,6 +560,9 @@ class SaleSection(CommerceSection):
         index += self.render_percent_index()
         return index
 
+    def commerce(self) -> bool:
+        return self.get_record_list().sell_records()
+
 
 class BuySection(CommerceSection, StockAndBuySection):
     _INDEX_NAME_SIZE = cs.INDEX_INPUT_BUY_NAME_SIZE
@@ -532,6 +585,18 @@ class BuySection(CommerceSection, StockAndBuySection):
         )
         StockAndBuySection.__init__(self)
 
+    def render_collect(self) -> list:
+        return [
+            Button(
+                key=self.get_key() + cs.COLLECT_BUTTON_KEY,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.COLLECT_BUTTON_PAD,
+                button_text=cs.COLLECT_BUTTON_TEXT,
+                tooltip=cs.COLLECT_BUTTON_TOOLTIP
+            )
+        ]
+
     def render_supplier_index(self) -> list:
         return CommerceSection.render_base_index(
             self, cs.INDEX_INPUT_SUPPLIER_SIZE, cs.INDEX_INPUT_SUPPLIER_PAD,
@@ -549,7 +614,19 @@ class BuySection(CommerceSection, StockAndBuySection):
         adder = self.render_adder()
         layout[0].insert(7, adder[-1])
         layout[0].insert(7, adder[0])
+        layout[0] += self.render_collect()
         return layout
+
+    def commerce(self) -> bool:
+        return self.get_record_list().buy_records()
+
+    def collect_unit_prices(self) -> bool:
+        self.get_record_list().collect_unit_prices()
+        self.get_record_list().collect_stock()
+        return False
+
+    def clear_issues(self):
+        self.get_record_list().clear_issues()
 
 
 class Main(Window):
@@ -557,7 +634,7 @@ class Main(Window):
         global MAIN
         MAIN = self
         FileManager.db_control()
-        theme('PapelerAbasto')
+        self.load_theme()
         StockSection.key('StockSection.instance()')
         SaleSection.key('SaleSection.instance()')
         BuySection.key('BuySection.instance()')
@@ -567,6 +644,9 @@ class Main(Window):
             size=cs.WINDOWS_SIZE,
             location=cs.WINDOWS_LOCATION
         )
+        SaleSection.instance().apply()
+        BuySection.instance().apply()
+        BuySection.instance().clear_issues()
         self.run()
 
     def render_layout(self) -> list[list]:
@@ -587,6 +667,9 @@ class Main(Window):
             ]
         ]
         return layout
+
+    def load_theme(self):
+        theme(FileManager.load_theme())
 
     def close(self, timeout=0):
         self.read(timeout=timeout)

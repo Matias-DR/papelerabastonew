@@ -19,7 +19,7 @@ class Record(Column):
                 self._stock_element(stock)
             ]
         ]
-        super().__init__(layout=default_fields)
+        super().__init__(layout=default_fields, pad=cs.RECORD_PAD)
 
     def _name_element(self, name: str) -> Input:
         return Input(
@@ -47,7 +47,11 @@ class Record(Column):
 
     def _check_element(self, check: bool) -> Checkbox:
         return Checkbox(
-            text='', default=check, pad=cs.CHECK_PAD, checkbox_color='White'
+            text='',
+            default=check,
+            pad=cs.CHECK_PAD,
+            text_color='Black',
+            checkbox_color='White'
         )
 
     def _add_percent_and_check_elements(self, percent: int, check: bool):
@@ -134,6 +138,9 @@ class Record(Column):
 
 
 class StockAndBuyRecord:
+    def have_unit_price(self) -> bool:
+        return self.get_unit_price() > 0
+
     def passes_control(self) -> bool:
         if self.get_name() == '':
             self.indicate_issue(0)
@@ -147,9 +154,6 @@ class StockAndBuyRecord:
             self.indicate_issue(error)
             return False
         return True
-
-    def have_unit_price(self) -> bool:
-        return self.get_unit_price() > 0
 
 
 class StockRecord(Record, StockAndBuyRecord):
@@ -249,7 +253,7 @@ class CommerceRecord(Record):
         return int(self._get_fields()[3].get())
 
     def get_csv_report(self) -> list:
-        return ['', ''] + super().get_csv_report()
+        return ['', '', ''] + super().get_csv_report()
 
     def get_wrong_field_index(self) -> int:
         error = super().get_wrong_field_index()
@@ -269,9 +273,12 @@ class CommerceRecord(Record):
         return round(price + percent, 2)
 
     def apply_final_price(self) -> float:
-        final_price = self.calculate_final_price()
-        self.update_final_price(final_price)
-        return final_price
+        self.clear_issues()
+        if self.passes_control():
+            final_price = self.calculate_final_price()
+            self.update_final_price(final_price)
+            return final_price
+        return 0
 
 
 class SaleRecord(CommerceRecord):
