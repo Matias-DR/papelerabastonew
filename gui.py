@@ -9,13 +9,15 @@ from multiprocessing import Process
 MAIN = None
 
 # - tarea de refactoring: para las clases tipo herramienta 'strategy' hacer una unica por cada categoría que las contenga y tenga alguna funcion que las devuelva segun un string indicado por parametro
+# - hacer la parte visual
 # - hacer que el botón de guardado una vez que guarde el archvio csv, lo ejecute (pasaría a encargarse de dos tareas, guardarlo y visualizarlo)
 
-
+# ATENCION: EL UNICO CAMBIO QUE SE REALIZA ES 'SE AGREGA CALLBACK EN KEY DE SORTERS Y AGREGA IF EN MAIN.RUN
 class _Sorter:
     def __init__(self):
         pass
-
+# - HACER UN BU (subir todo antes de seguir editando)
+# - ya que tenemos el callback arreglar entonces las referencias y en los parametros
     def sort_list_min_max(self, rc_list: RecordList, field: int):
         rc_list.sort(self.field, field)
 
@@ -64,7 +66,6 @@ class _Remover:
     def __init__(self):
         pass
 
-
 class SELECCIONADOS(_Remover):
     def remove_records(self, rc_list: RecordList) -> bool:
         return rc_list.remove_checked_records()
@@ -78,6 +79,18 @@ class VACÍOS(_Remover):
 class TODOS(_Remover):
     def remove_records(self, rc_list: RecordList) -> bool:
         return rc_list.remove_all_records()
+
+
+class Remover:
+    def __init__(self, record_list: RecordList):
+        self._record_list = record_list
+        self._remover = SELECCIONADOS()
+
+    def change_remover(self, remover: str):
+        self._remover = getattr(remover)
+
+    def remove_records(self):
+        return self._remover.remove_records(self._record_list)
 
 
 class Section(Column):
@@ -107,9 +120,9 @@ class Section(Column):
         cls.__key = key
 
     def __init__(self, size: tuple, pad: tuple):
-        super().__init__(layout=self.render_layout(), size=size, pad=pad)
         self._remover = SELECCIONADOS()
         self._sorter = NOMBRE()
+        super().__init__(layout=self.render_layout(), size=size, pad=pad)
 
     def __len__(self) -> int:
         return len(self.get_record_list())
@@ -145,7 +158,7 @@ class Section(Column):
                 enable_events=True
             ),
             Button(
-                key=self.__key + cs.SORTER_BUTTON_UP_KEY,
+                key=self._sorter.sort_list_min_max,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.SORTER_BUTTON_PAD,
@@ -153,7 +166,7 @@ class Section(Column):
                 tooltip=cs.SORTER_BUTTON_UP_TOOLTIP
             ),
             Button(
-                key=self.__key + cs.SORTER_BUTTON_DOWN_KEY,
+                key=self._sorter.sort_list_max_min,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.SORTER_BUTTON_PAD,
@@ -701,6 +714,7 @@ class Main(Window):
                 if e is None:
                     self.close()
                     break
+                e()
 
 
 if __name__ == '__main__':
