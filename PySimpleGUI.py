@@ -12511,7 +12511,7 @@ def SaveAs(
     auto_size_button=None,
     button_color=None,
     change_submits=True,
-    enable_events=True,
+    enable_events=False,
     font=None,
     pad=None,
     key=None,

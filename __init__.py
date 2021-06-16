@@ -1,3 +1,5 @@
+from tkinter.constants import S
+from typing import Any
 from PySimpleGUI import (
     T, theme, Window, Column, Frame, Tab, TabGroup, Button, SaveAs, Input,
     Combo, Spin, Radio, Text, Checkbox
@@ -11,10 +13,288 @@ from sys import platform
 from subprocess import call
 
 # ------------------------------ #
+#        generic_tools.py        #
+# ------------------------------ #
+class Config:
+    def setattr_in_object_from_objects(in_object, *from_objects):
+        for from_object in from_objects:
+            for function in dir(from_object):
+                if not function.startswith('_'):
+                    setattr(in_object, function, getattr(from_object, function))
+
+
+# ------------------------------ #
+#         record_tools.py        #
+# ------------------------------ #
+class BaseRecordControl:
+    def __init__(self, record_list):
+        self._record_list = record_list
+
+    def have_unit_price(self) -> bool:
+        return self._record_list.get_unit_price() > 0
+
+    def base_control(self) -> bool:
+        if self._record_list.get_name() == '':
+            self._record_list.indicate_issue(0)
+            return False
+        try:
+            error = 1
+            self._record_list.get_unit_price()
+            error = 2
+            self._record_list.get_stock()
+        except:
+            self._record_list.indicate_issue(error)
+            return False
+        return True
+
+
+# ------------------------------ #
+#      record_list_tools.py      #
+# ------------------------------ #
+class FileManager:
+    @staticmethod
+    def restart(location=(0, 0)):
+        if platform == "win32":
+            os.system("python __init__.py")
+        else:
+            os.system(f"python3.9 __init__.py {location[0]} {location[1]}")
+
+    def create_json_files():
+        for path in cs.JSON_PATHS:
+            with open(path, "w") as file:
+                dump([], file)
+
+    def create_csv_files():
+        FileManager.save_in_csv(
+            path=cs.CSV_SALES_PATH, data=cs.CSV_SALES_HEADER, mode="w"
+        )
+        FileManager.save_in_csv(
+            path=cs.CSV_BUYS_PATH, data=cs.CSV_BUYS_HEADER, mode="w"
+        )
+
+    def create_theme_file():
+        with open('./db/THEME', 'w') as file:
+            file.write('PapelerAbasto')
+
+    def db_control():
+        if not os.path.isdir("./db"):
+            os.mkdir("./db")
+            FileManager.create_json_files()
+            FileManager.create_csv_files()
+            FileManager.create_theme_file()
+
+    def load(path: str):
+        with open(path) as file:
+            return load(file)
+
+    def save_in_json(path: str, data):
+        with open(path, "w") as file:
+            dump(data, file, indent=4)
+
+    def save_in_csv(path: str, data: list, mode: str = "a"):
+        with open(path, mode, newline="") as f:
+            wr = writer(
+                f,
+                delimiter=",",
+            )
+            for line in data:
+                wr.writerow(line)
+
+    def load_theme():
+        with open('./db/THEME') as file:
+            return file.read()
+
+    def change_theme() -> bool:
+        with open('./db/THEME', 'w') as file:
+            if theme() == 'PapelerAbasto':
+                file.write('Default1')
+            else:
+                file.write('PapelerAbasto')
+        return True
+
+
+class Sorter:
+    class _Sorter:
+        def __init__(self):
+            pass
+
+    class _StrSorter(_Sorter):
+        def field(self, field):
+            return field
+
+    class _IntSorter(_Sorter):
+        def field(self, field):
+            try:
+                return int(field)
+            except:
+                return field
+
+    class _NOMBRE(_StrSorter):
+        ...
+
+    class _PU(_IntSorter):
+        ...
+
+    class _STOCK(_IntSorter):
+        ...
+
+    class _CANTIDAD(_IntSorter):
+        ...
+
+    class _PF(_IntSorter):
+        ...
+
+    class _PROVEEDOR(_StrSorter):
+        ...
+
+    def __init__(self, record_list):
+        self._record_list = record_list
+        self._index = self._NOMBRE()
+
+    def change_sorter(self):
+        self._index = getattr(
+            self, '_' + Main.instance()[self.change_sorter].get()
+        )()
+
+    def _get_sort_index(self) -> int:
+        return cs.SORTER_COMBO_ALL_VALUES[Main.instance()[
+            self._record_list.change_sorter].get()]
+
+    def _sort(self, field_calc: callable, field: int, reverse: bool = False):
+        self._record_list._update_from_report(
+            sorted(
+                self._record_list.get_report(),
+                key=lambda rc: field_calc(rc[field]),
+                reverse=reverse
+            )
+        )
+
+    def sort_list_min_max(self):
+        self._sort(self._index.field, self._get_sort_index())
+
+    def sort_list_max_min(self):
+        self._sort(self._index.field, self._get_sort_index(), True)
+
+
+class Remover:
+    class _Remover:
+        def __init__(self):
+            pass
+
+    class _SELECCIONADOS(_Remover):
+        def remove_records(self, rc_list) -> bool:
+            # return rc_list.remove_checked_records()
+            if rc_list._have_checked_records():
+                for rc in reversed(rc_list.Rows):
+                    if rc[0].get_check():
+                        rc_list.Rows.remove(rc)
+                rc_list.save_in_json()
+                return True
+            return False
+
+    class _VACÍOS(_Remover):
+        def remove_records(self, rc_list) -> bool:
+            # return rc_list.remove_empty_records()
+            if rc_list.have_empty_records():
+                for rc in reversed(rc_list.Rows):
+                    if rc[0].is_empty():
+                        rc_list.Rows.remove(rc)
+                rc_list.save_in_json()
+                return True
+            return False
+
+    class _TODOS(_Remover):
+        def remove_records(self, rc_list) -> bool:
+            # return rc_list.remove_all_records()
+            if rc_list.Rows:
+                rc_list.Rows = []
+                return True
+            return False
+
+    def __init__(self, record_list):
+        self._record_list = record_list
+        self._remover = self._SELECCIONADOS()
+
+    def change_remover(self):
+        self._remover = getattr(
+            self, '_' + Main.instance()[self.change_remover].get()
+        )()
+
+    def remove_records(self) -> bool:
+        return self._remover.remove_records(self._record_list)
+
+
+class EmptyRecordControl:
+    def __init__(self, record_list):
+        self._record_list = record_list
+
+    def empty_record_control(self) -> bool:
+        for rc in reversed(self._record_list._get_records()):
+            if rc.is_empty():
+                return True
+        return False
+
+
+class RecordAdder:
+    def __init__(self, record_list):
+        self._record_list = record_list
+
+    def add_records(self) -> bool:
+        how_many_add = int(Main.instance()[(
+            self._record_list,
+            cs.ADDER_SPIN_KEY,
+        )].get())
+        if how_many_add:
+            report = self._record_list.get_report()
+            for _ in range(how_many_add):
+                report.append(self._record_list.get_class_record().get_empty_report())
+            FileManager.save_in_json(path=self._record_list.get_json_path(), data=report)
+            # FileManager.save_in_json(
+            #     path=self._record_list.get_json_path(),
+            #     data=list(
+            #         map(
+            #             lambda _: self._record_list.get_report().append(
+            #                 self._record_list.get_class_record().get_empty_report()
+            #             ), range(how_many_add)
+            #         )
+            #     )
+            # )
+            print('llegaiken1')
+            return True
+        return False
+
+
+# ------------------------------ #
+#        section_tools.py        #
+# ------------------------------ #
+class RenderAdder:
+    def render_adder(record_list) -> list:
+        return [
+            Spin(
+                key=(
+                    record_list,
+                    cs.ADDER_SPIN_KEY,
+                ),
+                size=cs.ADDER_SPIN_SIZE,
+                pad=cs.ADDER_SPIN_PAD,
+                values=cs.ADDER_SPIN_VALUES,
+                initial_value=0,
+                readonly=True
+            ),
+            Button(
+                key=record_list.add_records,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.ADDER_BUTTON_PAD,
+                button_text=cs.ADDER_BUTTON_TEXT,
+                tooltip=cs.ADDER_BUTTON_TOOLTIP
+            )
+        ]
+
+
+# ------------------------------ #
 #           record.py            #
 # ------------------------------ #
-
-
 class Record(Column):
     @classmethod
     def get_name_size(cls) -> tuple:
@@ -139,37 +419,8 @@ class Record(Column):
     def uncheck(self):
         self._get_fields()[-1].update(False)
 
-    def passes_stock_control(self) -> bool:
-        try:
-            self.get_stock()
-            if self.have_stock() > 0:
-                return True
-        except:
-            pass
-        self.indicate_issue(2, 'Orange')
-        return False
 
-
-class StockAndBuyRecord:
-    def have_unit_price(self) -> bool:
-        return self.get_unit_price() > 0
-
-    def passes_control(self) -> bool:
-        if self.get_name() == '':
-            self.indicate_issue(0)
-            return False
-        try:
-            error = 1
-            self.get_unit_price()
-            error = 2
-            self.get_stock()
-        except:
-            self.indicate_issue(error)
-            return False
-        return True
-
-
-class StockRecord(Record, StockAndBuyRecord):
+class StockRecord(Record):
     _NAME_SIZE = cs.STOCK_NAME_SIZE
     _secure_mode = False
 
@@ -180,6 +431,8 @@ class StockRecord(Record, StockAndBuyRecord):
     @classmethod
     def change_secure_mode(cls):
         cls._secure_mode = not cls._secure_mode
+        Main.instance()[StockList.instance().secure_mode
+                       ].update('🔐' if cls._secure_mode else '🔓')
 
     def __init__(
         self,
@@ -189,12 +442,12 @@ class StockRecord(Record, StockAndBuyRecord):
         percent: int = 0,
         check: bool = False
     ):
-        Record.__init__(self, name, unit_price, stock)
-        StockAndBuyRecord.__init__(self)
+        Config.setattr_in_object_from_objects(self, BaseRecordControl(self))
+        super().__init__(name, unit_price, stock)
         self._add_percent_and_check_elements(percent, check)
 
     def passes_pre_sale_control(self) -> bool:
-        if self.passes_control():
+        if self.base_control():
             if self.have_stock():
                 if self.have_unit_price():
                     return True
@@ -204,7 +457,7 @@ class StockRecord(Record, StockAndBuyRecord):
         return False
 
     def passes_pre_buy_control(self) -> bool:
-        if self.passes_control():
+        if self.base_control():
             if self.have_unit_price():
                 return True
             self.indicate_issue(1)
@@ -239,6 +492,16 @@ class StockRecord(Record, StockAndBuyRecord):
 
     def have_stock(self) -> bool:
         return self.get_stock() > 0
+
+    def passes_stock_control(self) -> bool:
+        try:
+            self.get_stock()
+            if self.have_stock() > 0:
+                return True
+        except:
+            pass
+        self.indicate_issue(2, 'Orange')
+        return False
 
 
 class CommerceRecord(Record):
@@ -331,7 +594,7 @@ class SaleRecord(CommerceRecord):
         return False
 
 
-class BuyRecord(CommerceRecord, StockAndBuyRecord):
+class BuyRecord(CommerceRecord):
     _NAME_SIZE = cs.BUY_NAME_SIZE
 
     @classmethod
@@ -349,10 +612,8 @@ class BuyRecord(CommerceRecord, StockAndBuyRecord):
         percent: int = 0,
         check: bool = False
     ):
-        CommerceRecord.__init__(
-            self, name, unit_price, stock, amount, final_price
-        )
-        StockAndBuyRecord.__init__(self)
+        Config.setattr_in_object_from_objects(self, BaseRecordControl(self))
+        super().__init__(name, unit_price, stock, amount, final_price)
         self._get_fields().append(self._supplier_element(supplier))
         self._add_percent_and_check_elements(percent, check)
         self._make_elements_read_only()
@@ -369,7 +630,7 @@ class BuyRecord(CommerceRecord, StockAndBuyRecord):
         return [self.get_name(), self.get_unit_price(), self.get_amount()]
 
     def passes_control(self) -> bool:
-        if StockAndBuyRecord.passes_control(self):
+        if self.base_control():
             try:
                 self.get_amount()
             except:
@@ -395,173 +656,17 @@ class BuyRecord(CommerceRecord, StockAndBuyRecord):
 # ------------------------------ #
 #         record_list.py         #
 # ------------------------------ #
-
-
-class FileManager:
-    @staticmethod
-    def restart(location=(0, 0)):
-        if platform == "win32":
-            os.system("python __init__.py")
-        else:
-            os.system(f"python3.9 __init__.py {location[0]} {location[1]}")
-
-    def create_json_files():
-        for path in cs.JSON_PATHS:
-            with open(path, "w") as file:
-                dump([], file)
-
-    def create_csv_files():
-        FileManager.save_in_csv(
-            path=cs.CSV_SALES_PATH, data=cs.CSV_SALES_HEADER, mode="w"
-        )
-        FileManager.save_in_csv(
-            path=cs.CSV_BUYS_PATH, data=cs.CSV_BUYS_HEADER, mode="w"
-        )
-
-    def create_theme_file():
-        with open('./db/THEME', 'w') as file:
-            file.write('PapelerAbasto')
-
-    def db_control():
-        if not os.path.isdir("./db"):
-            os.mkdir("./db")
-            FileManager.create_json_files()
-            FileManager.create_csv_files()
-            FileManager.create_theme_file()
-
-    def load(path: str):
-        with open(path) as file:
-            return load(file)
-
-    def save_in_json(path: str, data):
-        with open(path, "w") as file:
-            dump(data, file, indent=4)
-
-    def save_in_csv(path: str, data: list, mode: str = "a"):
-        with open(path, mode, newline="") as f:
-            wr = writer(
-                f,
-                delimiter=",",
-            )
-            for line in data:
-                wr.writerow(line)
-
-    def load_theme():
-        with open('./db/THEME') as file:
-            return file.read()
-
-    def change_theme():
-        with open('./db/THEME', 'w') as file:
-            if theme() == 'PapelerAbasto':
-                file.write('Default1')
-            else:
-                file.write('PapelerAbasto')
-
-
-class Sorter:
-    class _Sorter:
-        def __init__(self):
-            pass
-
-        def sort_list_min_max(self, rc_list, field: int):
-            rc_list.sort(self.field, field)
-
-        def sort_list_max_min(self, rc_list, field: int):
-            rc_list.sort(self.field, field, True)
-
-    class _StrSorter(_Sorter):
-        def field(self, field):
-            return field
-
-    class _IntSorter(_Sorter):
-        def field(self, field):
-            try:
-                return int(field)
-            except:
-                return field
-
-    class NOMBRE(_StrSorter):
-        ...
-
-    class PU(_IntSorter):
-        ...
-
-    class STOCK(_IntSorter):
-        ...
-
-    class CANTIDAD(_IntSorter):
-        ...
-
-    class PF(_IntSorter):
-        ...
-
-    class PROVEEDOR(_StrSorter):
-        ...
-
-    def __init__(self, record_list):
-        self._record_list = record_list
-        self._sorter = self.NOMBRE()
-
-    def change_sorter(self):
-        self._sorter = getattr(
-            self,
-            Main.instance()[self._record_list.change_sorter].get()
-        )()
-
-    def get_sort_index(self) -> int:
-        return cs.SORTER_COMBO_ALL_VALUES[Main.instance()[
-            self._record_list.change_sorter].get()]
-
-    def sort_list_min_max(self):
-        self._sorter.sort_list_min_max(self._record_list, self.get_sort_index())
-
-    def sort_list_max_min(self):
-        self._sorter.sort_list_max_min(self._record_list, self.get_sort_index())
-
-
-class Remover:
-    class _Remover:
-        def __init__(self):
-            pass
-
-    class SELECCIONADOS(_Remover):
-        def remove_records(self, rc_list) -> bool:
-            return rc_list.remove_checked_records()
-
-    class VACÍOS(_Remover):
-        def remove_records(self, rc_list) -> bool:
-            return rc_list.remove_empty_records()
-
-    class TODOS(_Remover):
-        def remove_records(self, rc_list) -> bool:
-            return rc_list.remove_all_records()
-
-    def __init__(self, record_list):
-        self._record_list = record_list
-        self._remover = self.SELECCIONADOS()
-
-    def change_remover(self):
-        self._remover = getattr(
-            self,
-            Main.instance()[self._record_list.change_remover].get()
-        )()
-
-    def remove_records(self) -> bool:
-        return self._remover.remove_records(self._record_list)
-
-
 class RecordList(Column):
-    _instance = None
+    __instance = None
 
     @classmethod
     def instance(cls):
-        if not cls._instance:
-            cls._instance = cls.new()
-        return cls._instance
+        if not cls.__instance:
+            cls.__instance = cls.new()
+        return cls.__instance
 
     def __init__(self, records: list, size: tuple, pad=tuple):
-        self._sorter = Sorter(self)
-        self._remover = Remover(self)
+        Config.setattr_in_object_from_objects(self, Sorter(self), Remover(self))
         super().__init__(
             layout=records,
             size=size,
@@ -621,8 +726,11 @@ class RecordList(Column):
                 return i
         raise IndexError
 
-    def search(self, name: str):
-        print(name)
+    def search(self):
+        name = Main.instance()[(
+            self,
+            'finder_input',
+        )].get()
         rcs = self._get_records()
         index = self.get_search_index(name)
         rc_to_top = rcs[index].get_report()
@@ -630,36 +738,9 @@ class RecordList(Column):
             rcs[i].update_from_report(rcs[i - 1].get_report())
         rcs[0].update_from_report(rc_to_top)
 
-    def sort(self, field_calc: callable, field: int, reverse: bool = False):
-        self._update_from_report(
-            sorted(
-                self.get_report(),
-                key=lambda rc: field_calc(rc[field]),
-                reverse=reverse
-            )
-        )
-
-    def sort_list_min_max(self):
-        self._sorter.sort_list_min_max()
-
-    def sort_list_max_min(self):
-        self._sorter.sort_list_max_min()
-
-    def change_sorter(self):
-        self._sorter.change_sorter()
-
     def uncheck_records(self):
         for rc in self.get_checked_records():
             rc.uncheck()
-
-    def remove_checked_records(self) -> bool:
-        if self._have_checked_records():
-            for rc in reversed(self.Rows):
-                if rc[0].get_check():
-                    self.Rows.remove(rc)
-            self.save_in_json()
-            return True
-        return False
 
     def clear_issues(self):
         for rc in self._get_records():
@@ -672,37 +753,8 @@ class RecordList(Column):
     def save_in_json(self):
         FileManager.save_in_json(self.get_json_path(), self.get_report())
 
-    def remove_records(self) -> bool:
-        return self._remover.remove_records()
 
-    def change_remover(self):
-        self._remover.change_remover()
-
-
-class StockAndBuyList:
-    def have_empty_records(self) -> bool:
-        for rc in reversed(self._get_records()):
-            if rc.is_empty():
-                return True
-        return False
-
-    def remove_empty_records(self) -> bool:
-        if self.have_empty_records():
-            for rc in reversed(self.Rows):
-                if rc[0].is_empty():
-                    self.Rows.remove(rc)
-            self.save_in_json()
-            return True
-        return False
-
-    def add_records(self, how_many_add: int):
-        report = self.get_report()
-        for _ in range(how_many_add):
-            report.append(self.get_class_record().get_empty_report())
-        FileManager.save_in_json(path=self.get_json_path(), data=report)
-
-
-class StockList(RecordList, StockAndBuyList):
+class StockList(RecordList):
     @classmethod
     def new(cls):
         records = [
@@ -713,13 +765,14 @@ class StockList(RecordList, StockAndBuyList):
         return cls(records)
 
     def __init__(self, records: list):
-        RecordList.__init__(
-            self,
+        Config.setattr_in_object_from_objects(
+            self, RecordAdder(self), EmptyRecordControl(self)
+        )
+        super().__init__(
             records=records,
             size=cs.RECORDLIST_COLUMN_SIZE,
             pad=cs.RECORDLIST_COLUMN_PAD,
         )
-        StockAndBuyList.__init__(self)
 
     def get_json_path(self) -> str:
         return cs.JSON_STOCK_PATH
@@ -752,7 +805,7 @@ class StockList(RecordList, StockAndBuyList):
         for rc in self.get_checked_records():
             rc.passes_stock_control()
 
-    def apply_percent_to_records(self):
+    def apply(self):
         self.clear_issues()
         for rc in tuple(
             filter(
@@ -793,13 +846,17 @@ class StockList(RecordList, StockAndBuyList):
         self.get_record(sale_report[0]).update_from_sale(sale_report[1])
 
     def receive_sales_report(self, sales_report: list):
-        print(sales_report)
         for sale_report in sales_report:
             self.update_record_from_sale_report(sale_report)
         self.save_in_json()
 
-    def export(self, path: str):
-        FileManager.save_in_csv(path=path, data=self.get_csv_report(), mode="w")
+    def export(self):
+        print(Main.instance().ReturnValuesDictionary[self.export])
+        FileManager.save_in_csv(
+            path=Main.instance().ReturnValuesDictionary[self.export],
+            data=self.get_csv_report(),
+            mode="w"
+        )
 
     def get_pre_commerce_report(self) -> list[list]:
         return list(
@@ -892,12 +949,6 @@ class CommerceList(RecordList):
     def __init__(self, records: list, size: tuple, pad: tuple):
         super().__init__(records=records, size=size, pad=pad)
 
-    def remove_all_records(self) -> bool:
-        if self.Rows:
-            self.Rows = []
-            return True
-        return False
-
     def get_sale_report(self) -> list:
         return list(map(lambda rc: (rc.get_sale_report()), self._get_records()))
 
@@ -911,17 +962,13 @@ class CommerceList(RecordList):
             map(lambda rc: rc.get_csv_report(), self._get_records())
         )
 
-    def apply_final_price(self) -> float:
-        return sum(
-            tuple(map(lambda rc: rc.apply_final_price(), self._get_records()))
-        )
-
     def save_in_csv(self):
         FileManager.save_in_csv(
             path=self.get_csv_path(), data=self.get_csv_report()
         )
 
-    def export(self, path: str):
+    def export(self):
+        path = Main.instance().ReturnValuesDictionary[self.export]
         if platform == 'win32':
             __import__('subprocess').call(
                 f'C:\Windows\WinSxS\wow64_microsoft-windows-powershell-exe_31bf3856ad364e35_10.0.19041.546_none_5163f0069562aff6\powershell.exe cp {self.get_csv_path()} {path}',
@@ -936,6 +983,17 @@ class CommerceList(RecordList):
             existent_record.update_from_report(report)
             return False
         return True
+
+    def calculate_total_price(self) -> float:
+        return sum(
+            tuple(map(lambda rc: rc.apply_final_price(), self._get_records()))
+        )
+
+    def apply(self):
+        Main.instance()[(
+            self,
+            'total_price',
+        )].update(self.calculate_total_price())
 
     def pre_commerce_from_report(self, report: tuple) -> bool:
         filtered_report = list(filter(self.update_existent_record, report))
@@ -973,6 +1031,7 @@ class SaleList(CommerceList):
         return cls(records)
 
     def __init__(self, records: list):
+        # Config.setattr_in_object_from_objects(self, Sorter(self))
         super().__init__(
             records=records,
             size=cs.SALELIST_COLUMN_SIZE,
@@ -1016,13 +1075,14 @@ class SaleList(CommerceList):
                 return False
         return True
 
-    def sell_records(self):
+    def commerce(self):
         if self.existence_control():
             if self.passes_control():
                 if self.passes_amount_control():
                     if StockList.instance().passes_sale_control(
                         self.get_checked_record_names()
                     ):
+                        self.apply()
                         self.upload_commerce_report()
                         self.save_in_csv()
                         self.remove_checked_records()
@@ -1031,7 +1091,7 @@ class SaleList(CommerceList):
         return False
 
 
-class BuyList(CommerceList, StockAndBuyList):
+class BuyList(CommerceList):
     @classmethod
     def new(cls):
         records = [
@@ -1052,13 +1112,14 @@ class BuyList(CommerceList, StockAndBuyList):
         return cls(records)
 
     def __init__(self, records: list):
-        CommerceList.__init__(
-            self,
+        Config.setattr_in_object_from_objects(
+            self, RecordAdder(self), EmptyRecordControl(self)
+        )
+        super().__init__(
             records=records,
             size=cs.BUYLIST_COLUMN_SIZE,
             pad=cs.BUYLIST_COLUMN_PAD
         )
-        StockAndBuyList.__init__(self)
 
     def get_buy_report(self) -> list[list]:
         return tuple(map(lambda rc: rc.get_buy_report(), self._get_records()))
@@ -1075,29 +1136,34 @@ class BuyList(CommerceList, StockAndBuyList):
     def upload_commerce_report(self):
         StockList.instance().receive_buys_report(self.get_buy_report())
 
-    def collect(self, collect_method: str, update_method: str):
+    def _collect(self, collect_method: str, update_method: str):
         for rc in getattr(StockList.instance(),
                           collect_method)(self.get_record_names()):
             getattr(self.get_record(rc[0]), update_method)(rc[1])
 
-    def collect_unit_prices(self):
-        self.collect(
+    def _collect_unit_prices(self):
+        self._collect(
             'collect_unit_price_from_record_names', 'update_unit_price'
         )
 
-    def collect_stock(self):
-        self.collect('collect_stock_from_record_names', 'update_stock')
+    def _collect_stock(self):
+        self._collect('collect_stock_from_record_names', 'update_stock')
+
+    def collect(self):
+        self._collect_stock()
+        self._collect_unit_prices()
 
     def complete_pre_sell_report(self, pre_sell_report: list):
         for report in pre_sell_report:
             report += [0, 0, '', 0, False]
 
-    def buy_records(self) -> bool:
+    def commerce(self) -> bool:
         if self.passes_control():
             if self.passes_amount_control():
                 if StockList.instance().passes_buy_control(
                     self.get_checked_record_names()
                 ):
+                    self.apply()
                     self.upload_commerce_report()
                     self.save_in_csv()
                     self.remove_checked_records()
@@ -1109,16 +1175,7 @@ class BuyList(CommerceList, StockAndBuyList):
 # ------------------------------ #
 #             gui.py             #
 # ------------------------------ #
-
-MAIN = None
-
-# - tarea de refactoring: para las clases tipo herramienta 'strategy' hacer una unica por cada categoría que las contenga y tenga alguna funcion que las devuelva segun un string indicado por parametro
-# - hacer la parte visual
-# - hacer que el botón de guardado una vez que guarde el archvio csv, lo ejecute (pasaría a encargarse de dos tareas, guardarlo y visualizarlo)
-
-
 class Section(Column):
-    __key = None
     __instance = None
 
     @classmethod
@@ -1132,12 +1189,8 @@ class Section(Column):
         return cls._INDEX_NAME_SIZE
 
     @classmethod
-    def get_cleaner_options(cls) -> list:
-        return cls._CLEANER_OPTIONS
-
-    @classmethod
-    def get_key(cls) -> str:
-        return cls.__key
+    def get_remover_options(cls) -> list:
+        return cls._REMOVER_OPTIONS
 
     @classmethod
     def key(cls, key):
@@ -1152,12 +1205,15 @@ class Section(Column):
     def render_finder(self) -> list:
         return [
             Input(
-                key=self.__key + cs.FINDER_INPUT_KEY,
+                key=(
+                    self._record_list,
+                    'finder_input',
+                ),
                 size=cs.FINDER_INPUT_SIZE,
                 pad=cs.FINDER_INPUT_PAD
             ),
             Button(
-                key=self.__key + cs.FINDER_BUTTON_KEY,
+                key=self._record_list.search,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.FINDER_BUTTON_PAD,
@@ -1197,32 +1253,32 @@ class Section(Column):
             )
         ]
 
-    def render_cleaner(self) -> list:
-        cleaner_options = self.get_cleaner_options()
+    def render_remover(self) -> list:
+        remover_options = self.get_remover_options()
         return [
             Combo(
-                key=self.get_record_list().change_remover,
-                size=cs.CLEANER_COMBO_SIZE,
-                pad=cs.CLEANER_COMBO_PAD,
-                values=cleaner_options,
-                default_value=cleaner_options[0],
+                key=self._record_list.change_remover,
+                size=cs.REMOVER_COMBO_SIZE,
+                pad=cs.REMOVER_COMBO_PAD,
+                values=remover_options,
+                default_value=remover_options[0],
                 readonly=True,
                 enable_events=True
             ),
             Button(
-                key=self.get_record_list().remove_records,
+                key=self._record_list.remove_records,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
-                pad=cs.CLEANER_BUTTON_PAD,
-                button_text=cs.CLEANER_BUTTON_TEXT,
-                tooltip=cs.CLEANER_BUTTON_TOOLTIP
+                pad=cs.REMOVER_BUTTON_PAD,
+                button_text=cs.REMOVER_BUTTON_TEXT,
+                tooltip=cs.REMOVER_BUTTON_TOOLTIP
             )
         ]
 
     def render_apply(self) -> list:
         return [
             Button(
-                key=self.__key + cs.APPLY_BUTTON_KEY,
+                key=self._record_list.apply,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.APPLY_BUTTON_PAD,
@@ -1282,13 +1338,10 @@ class Section(Column):
         index += self.render_stock_index()
         return index
 
-    def render_record_list(self) -> list:
-        return [self.get_record_list()]
-
     def render_save_as(self) -> list:
         return [
             SaveAs(
-                key=self.__key + cs.SAVE_AS_BUTTON_KEY,
+                key=self._record_list.export,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.SAVE_AS_BUTTON_PAD,
@@ -1304,7 +1357,7 @@ class Section(Column):
     def render_uncheck(self) -> list:
         return [
             Button(
-                key=self.__key + cs.UNCHECK_BUTTON_KEY,
+                key=self._record_list.uncheck_records,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.UNCHECK_BUTTON_PAD,
@@ -1313,10 +1366,13 @@ class Section(Column):
             )
         ]
 
+    def render_record_list(self) -> list:
+        return [self._record_list]
+
     def render_layout(self) -> list:
         """
         [
-            [finder, sorter, cleaner, adder, save_as],
+            [finder, sorter, REMOVER, adder, save_as],
             [index, apply],
             [record_list]
         ]
@@ -1325,7 +1381,7 @@ class Section(Column):
         layout.append(self.render_finder())
         layout[0] += self.render_uncheck()
         layout[0] += self.render_sorter()
-        layout[0] += self.render_cleaner()
+        layout[0] += self.render_remover()
         layout.append(self.render_index())
         layout[1] += self.render_apply()
         layout.append(self.render_record_list())
@@ -1334,61 +1390,10 @@ class Section(Column):
     def get_save_target(self) -> int:
         return cs.DEFAULT_SAVE_TARGET
 
-    def search(self) -> bool:
-        self.get_record_list().search(MAIN[self.__key + ',finder_input'].get())
-        return False
 
-    def cleaner_option(self) -> bool:
-        self._remover = eval(MAIN[self.__key + ',cleaner_option'].get())()
-        return False
-
-    def export(self) -> bool:
-        self.get_record_list().export(
-            MAIN.ReturnValuesDictionary[self.__key + cs.SAVE_AS_BUTTON_KEY]
-        )
-        return False
-
-    def uncheck_records(self) -> bool:
-        self.get_record_list().uncheck_records()
-        return False
-
-    def callback(self, func: str) -> bool:
-        return getattr(self, func)()
-
-
-class StockAndBuySection:
-    _CLEANER_OPTIONS = cs.STOCK_SECTION_CLEANER_OPTIONS
-
-    def render_adder(self) -> list:
-        return [
-            Spin(
-                key=self.get_key() + cs.ADDER_SPIN_KEY,
-                size=cs.ADDER_SPIN_SIZE,
-                pad=cs.ADDER_SPIN_PAD,
-                values=cs.ADDER_SPIN_VALUES,
-                initial_value=0,
-                readonly=True
-            ),
-            Button(
-                key=self.get_key() + cs.ADDER_BUTTON_KEY,
-                image_data=cs.BUTTON_IMAGE,
-                image_size=cs.BUTTON_IMAGE_SIZE,
-                pad=cs.ADDER_BUTTON_PAD,
-                button_text=cs.ADDER_BUTTON_TEXT,
-                tooltip=cs.ADDER_BUTTON_TOOLTIP
-            )
-        ]
-
-    def add_records(self) -> bool:
-        how_many_add = int(MAIN[self.get_key() + ',spin_adder'].get())
-        self.get_record_list().add_records(how_many_add)
-        if how_many_add > 0:
-            return True
-        return False
-
-
-class StockSection(Section, StockAndBuySection):
+class StockSection(Section):
     _INDEX_NAME_SIZE = cs.INDEX_INPUT_STOCK_NAME_SIZE
+    _REMOVER_OPTIONS = cs.STOCK_SECTION_REMOVER_OPTIONS
 
     @classmethod
     def get_sort_values(cls) -> list:
@@ -1400,13 +1405,12 @@ class StockSection(Section, StockAndBuySection):
 
     def __init__(self):
         self._record_list = StockList.instance()
-        Section.__init__(self, cs.STOCKLIST_S_SIZE, cs.STOCKLIST_S_PAD)
-        StockAndBuySection.__init__(self)
+        super().__init__(cs.STOCKLIST_S_SIZE, cs.STOCKLIST_S_PAD)
 
     def render_pre_commerce(self) -> list:
         return [
             Button(
-                key=self.get_key() + cs.PRE_BUY_BUTTON_KEY,
+                key=self._record_list.pre_buy,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.PRE_BUY_BUTTON_PAD,
@@ -1414,7 +1418,7 @@ class StockSection(Section, StockAndBuySection):
                 tooltip=cs.PRE_BUY_BUTTON_TOOLTIP
             ),
             Button(
-                key=self.get_key() + cs.PRE_SELL_BUTTON_KEY,
+                key=self._record_list.pre_sell,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.PRE_SELL_BUTTON_PAD,
@@ -1434,7 +1438,7 @@ class StockSection(Section, StockAndBuySection):
     def render_theme(self) -> list:
         return [
             Button(
-                key=self.get_key() + cs.THEME_BUTTON_KEY,
+                key=FileManager.change_theme,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.THEME_BUTTON_PAD,
@@ -1443,27 +1447,26 @@ class StockSection(Section, StockAndBuySection):
             )
         ]
 
+    def render_secure_mode(self) -> list:
+        return [
+            Button(
+                key=self._record_list.secure_mode,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.SECURE_MODE_BUTTON_PAD,
+                button_text=cs.SECURE_UNLOCK_MODE_BUTTON_TEXT,
+                tooltip=cs.SECURE_MODE_BUTTON_TOOLTIP
+            )
+        ]
+
     def render_layout(self) -> list:
         layout = super().render_layout()
-        layout[0] += self.render_adder()
+        layout[0] += RenderAdder.render_adder(self._record_list)
         layout[0] += self.render_pre_commerce()
         layout[0] += self.render_save_as()
+        layout[0] += self.render_secure_mode()
         layout[0] += self.render_theme()
         return layout
-
-    def change_theme(self) -> bool:
-        FileManager.change_theme()
-        return True
-
-    def apply(self) -> bool:
-        self.get_record_list().apply_percent_to_records()
-        return False
-
-    def pre_sell(self) -> bool:
-        return self.get_record_list().pre_sell()
-
-    def pre_buy(self) -> bool:
-        return self.get_record_list().pre_buy()
 
 
 class CommerceSection(Section):
@@ -1500,8 +1503,17 @@ class CommerceSection(Section):
 
     def render_commerce(self) -> list:
         return [
+            Text(text='$'),
+            Text(
+                key=(
+                    self._record_list,
+                    'total_price',
+                ),
+                size=cs.TOTAL_PRICE_SIZE,
+                pad=cs.TOTAL_PRICE_PAD
+            ),
             Button(
-                key=self.get_key() + cs.COMMERCE_BUTTON_KEY,
+                key=self._record_list.commerce,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.COMMERCE_BUTTON_PAD,
@@ -1510,21 +1522,11 @@ class CommerceSection(Section):
             )
         ]
 
-    def render_total_price(self) -> list:
-        return [
-            Text(text='$'),
-            Text(
-                key=self.get_key() + cs.TOTAL_PRICE_KEY,
-                size=cs.TOTAL_PRICE_SIZE,
-                pad=cs.TOTAL_PRICE_PAD
-            )
-        ]
-
     def render_layout(self) -> list:
         """
         [
             [
-                finder, sorter, cleaner, save_as,
+                finder, sorter, REMOVER, save_as,
                 pre_visualizator, cs.total_price, commerce
             ],
             [index, apply],
@@ -1533,20 +1535,13 @@ class CommerceSection(Section):
         """
         layout = super().render_layout()
         layout[0] += self.render_save_as()
-        layout[0] += self.render_total_price()
         layout[0] += self.render_commerce()
         return layout
-
-    def apply(self) -> bool:
-        MAIN[self.get_key() + cs.TOTAL_PRICE_KEY].update(
-            int(self.get_record_list().apply_final_price())
-        )
-        return False
 
 
 class SaleSection(CommerceSection):
     _INDEX_NAME_SIZE = cs.INDEX_INPUT_SALE_NAME_SIZE
-    _CLEANER_OPTIONS = cs.SALE_SECTION_CLEANER_OPTIONS
+    _REMOVER_OPTIONS = cs.SALE_SECTION_REMOVER_OPTIONS
 
     @classmethod
     def get_sort_values(cls) -> list:
@@ -1564,20 +1559,18 @@ class SaleSection(CommerceSection):
         self._record_list = SaleList.instance()
         super().__init__(cs.SALELIST_S_SIZE, cs.SALELIST_S_PAD)
 
-    def get_save_target(self) -> int:
-        return 7
-
     def render_index(self) -> list:
         index = super().render_index()
         index += self.render_percent_index()
         return index
 
-    def commerce(self) -> bool:
-        return self.get_record_list().sell_records()
+    def get_save_target(self) -> int:
+        return 7
 
 
-class BuySection(CommerceSection, StockAndBuySection):
+class BuySection(CommerceSection):
     _INDEX_NAME_SIZE = cs.INDEX_INPUT_BUY_NAME_SIZE
+    _REMOVER_OPTIONS = cs.STOCK_SECTION_REMOVER_OPTIONS
 
     @classmethod
     def get_sort_values(cls) -> list:
@@ -1593,15 +1586,12 @@ class BuySection(CommerceSection, StockAndBuySection):
 
     def __init__(self):
         self._record_list = BuyList.instance()
-        CommerceSection.__init__(
-            self, cs.BUYSECTION_S_SIZE, cs.BUYSECTION_S_PAD
-        )
-        StockAndBuySection.__init__(self)
+        super().__init__(cs.BUYSECTION_S_SIZE, cs.BUYSECTION_S_PAD)
 
     def render_collect(self) -> list:
         return [
             Button(
-                key=self.get_key() + cs.COLLECT_BUTTON_KEY,
+                key=self._record_list.collect,
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.COLLECT_BUTTON_PAD,
@@ -1623,25 +1613,34 @@ class BuySection(CommerceSection, StockAndBuySection):
         return index
 
     def render_layout(self) -> list:
-        layout = CommerceSection.render_layout(self)
-        adder = self.render_adder()
+        layout = super().render_layout()
+        adder = RenderAdder.render_adder(self._record_list)
         layout[0].insert(7, adder[-1])
         layout[0].insert(7, adder[0])
         layout[0] += self.render_collect()
         return layout
 
-    def commerce(self) -> bool:
-        return self.get_record_list().buy_records()
 
-    def collect_unit_prices(self) -> bool:
-        self.get_record_list().collect_unit_prices()
-        self.get_record_list().collect_stock()
-        return False
-
-    def clear_issues(self):
-        self.get_record_list().clear_issues()
-
-
+# ------------------------------ #
+#          __init__.py           #
+# ------------------------------ #
+# - hacer la parte visual
+# - hacer que el botón de guardado una vez que guarde el archvio csv, lo ejecute
+# - hacer funcionar al apply del principio
+# listos:
+# 	-finder
+# 	-sorter
+# 	-remover
+# 	-change_theme
+# 	-secure_mode
+# 	-adder
+# 	-apply
+# 	-export..
+# 	-uncheck_records..
+# 	-pre_sell..
+# 	-commerce..
+# 	-collect..
+# 	-pre_buy..
 class Main(Window):
     __instance = None
 
@@ -1652,22 +1651,14 @@ class Main(Window):
         return cls.__instance
 
     def __init__(self):
-        global MAIN
-        MAIN = self
         FileManager.db_control()
         self.load_theme()
-        StockSection.key('StockSection.instance()')
-        SaleSection.key('SaleSection.instance()')
-        BuySection.key('BuySection.instance()')
         super().__init__(
             self.render_layout(),
             font=('Helvetica 16'),
             size=cs.WINDOWS_SIZE,
             location=cs.WINDOWS_LOCATION
         )
-        SaleSection.instance().apply()
-        BuySection.instance().apply()
-        BuySection.instance().clear_issues()
 
     def render_layout(self) -> list[list]:
         tab_group = [
@@ -1706,13 +1697,14 @@ class Main(Window):
         BuyList.instance().save_in_json()
 
     def run(self):
+        # SaleList.instance().apply()
+        # BuyList.instance().apply()
+        # BuyList.instance().clear_issues()
         while True:
             e, _ = self.read()
-            print(e)
+            print('evento:', e)
             try:
-                var, func = e.split(',')
-                print('var: ', var, '; func: ,', func)
-                if getattr(eval(var), 'callback')(func):
+                if e():
                     self.restart()
             except:
                 if e == '__EXIT__':
@@ -1722,11 +1714,7 @@ class Main(Window):
                 if e is None:
                     self.close()
                     break
-                try:
-                    if e():
-                        self.restart()
-                except:
-                    pass
+                print('error')
 
 
 if __name__ == '__main__':
