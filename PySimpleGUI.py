@@ -12500,7 +12500,7 @@ def FileSaveAs(
 # -------------------------  SAVE AS Element lazy function  ------------------------- #
 def SaveAs(
     button_text='Save As...',
-    target=(ThisRow, -1),
+    target=(ThisRow, +1),
     file_types=(("ALL Files", "*.*"), ),
     initial_folder=None,
     default_extension='',
@@ -12511,7 +12511,7 @@ def SaveAs(
     auto_size_button=None,
     button_color=None,
     change_submits=True,
-    enable_events=False,
+    enable_events=True,
     font=None,
     pad=None,
     key=None,

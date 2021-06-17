@@ -12,6 +12,7 @@ import os
 from sys import platform
 from subprocess import call
 
+
 # ------------------------------ #
 #        generic_tools.py        #
 # ------------------------------ #
@@ -33,7 +34,7 @@ class BaseRecordControl:
     def have_unit_price(self) -> bool:
         return self._record_list.get_unit_price() > 0
 
-    def base_control(self) -> bool:
+    def passes_base_control(self) -> bool:
         if self._record_list.get_name() == '':
             self._record_list.indicate_issue(0)
             return False
@@ -183,7 +184,6 @@ class Remover:
 
     class _SELECCIONADOS(_Remover):
         def remove_records(self, rc_list) -> bool:
-            # return rc_list.remove_checked_records()
             if rc_list._have_checked_records():
                 for rc in reversed(rc_list.Rows):
                     if rc[0].get_check():
@@ -194,7 +194,6 @@ class Remover:
 
     class _VACÍOS(_Remover):
         def remove_records(self, rc_list) -> bool:
-            # return rc_list.remove_empty_records()
             if rc_list.have_empty_records():
                 for rc in reversed(rc_list.Rows):
                     if rc[0].is_empty():
@@ -205,7 +204,6 @@ class Remover:
 
     class _TODOS(_Remover):
         def remove_records(self, rc_list) -> bool:
-            # return rc_list.remove_all_records()
             if rc_list.Rows:
                 rc_list.Rows = []
                 return True
@@ -214,6 +212,10 @@ class Remover:
     def __init__(self, record_list):
         self._record_list = record_list
         self._remover = self._SELECCIONADOS()
+
+    def set_remover(self, remover: str):
+        self._remover = getattr(self, remover)()
+        Main.instance()[self.change_remover].update(remover.strip('_'))
 
     def change_remover(self):
         self._remover = getattr(
@@ -240,15 +242,21 @@ class RecordAdder:
         self._record_list = record_list
 
     def add_records(self) -> bool:
-        how_many_add = int(Main.instance()[(
-            self._record_list,
-            cs.ADDER_SPIN_KEY,
-        )].get())
+        how_many_add = int(
+            Main.instance()[(
+                self._record_list,
+                cs.ADDER_SPIN_KEY,
+            )].get()
+        )
         if how_many_add:
             report = self._record_list.get_report()
             for _ in range(how_many_add):
-                report.append(self._record_list.get_class_record().get_empty_report())
-            FileManager.save_in_json(path=self._record_list.get_json_path(), data=report)
+                report.append(
+                    self._record_list.get_class_record().get_empty_report()
+                )
+            FileManager.save_in_json(
+                path=self._record_list.get_json_path(), data=report
+            )
             # FileManager.save_in_json(
             #     path=self._record_list.get_json_path(),
             #     data=list(
@@ -259,7 +267,6 @@ class RecordAdder:
             #         )
             #     )
             # )
-            print('llegaiken1')
             return True
         return False
 
@@ -447,7 +454,7 @@ class StockRecord(Record):
         self._add_percent_and_check_elements(percent, check)
 
     def passes_pre_sale_control(self) -> bool:
-        if self.base_control():
+        if self.passes_base_control():
             if self.have_stock():
                 if self.have_unit_price():
                     return True
@@ -457,7 +464,7 @@ class StockRecord(Record):
         return False
 
     def passes_pre_buy_control(self) -> bool:
-        if self.base_control():
+        if self.passes_base_control():
             if self.have_unit_price():
                 return True
             self.indicate_issue(1)
@@ -630,7 +637,7 @@ class BuyRecord(CommerceRecord):
         return [self.get_name(), self.get_unit_price(), self.get_amount()]
 
     def passes_control(self) -> bool:
-        if self.base_control():
+        if self.passes_base_control():
             try:
                 self.get_amount()
             except:
@@ -851,7 +858,6 @@ class StockList(RecordList):
         self.save_in_json()
 
     def export(self):
-        print(Main.instance().ReturnValuesDictionary[self.export])
         FileManager.save_in_csv(
             path=Main.instance().ReturnValuesDictionary[self.export],
             data=self.get_csv_report(),
@@ -921,7 +927,7 @@ class StockList(RecordList):
         for record_name in record_names:
             record = self.get_record(record_name)
             if record:
-                if record.passes_control():
+                if record.passes_base_control():
                     control = True
                 else:
                     return False
@@ -933,7 +939,7 @@ class StockList(RecordList):
         for record_name in record_names:
             record = self.get_record(record_name)
             if record:
-                if record.passes_control():
+                if record.passes_base_control():
                     if not record.have_stock():
                         record.indicate_issue(2)
                         return False
@@ -957,7 +963,7 @@ class CommerceList(RecordList):
 
     def get_csv_report(self) -> list[list]:
         header = cs.CSV_HEADER
-        header[0].append(self.apply_final_price())
+        header[0].append(self.apply())
         return header + list(
             map(lambda rc: rc.get_csv_report(), self._get_records())
         )
@@ -1016,6 +1022,27 @@ class CommerceList(RecordList):
     def get_checked_record_names(self) -> tuple[str]:
         return tuple(map(lambda rc: rc.get_name(), self.get_checked_records()))
 
+    def remove_checked_records(self) -> bool:
+        self.set_remover('_SELECCIONADOS')
+        self.remove_records()
+
+    def _collect(self, collect_method: str, update_method: str):
+        for rc in getattr(StockList.instance(),
+                          collect_method)(self.get_record_names()):
+            getattr(self.get_record(rc[0]), update_method)(rc[1])
+
+    def _collect_unit_prices(self):
+        self._collect(
+            'collect_unit_price_from_record_names', 'update_unit_price'
+        )
+
+    def _collect_stock(self):
+        self._collect('collect_stock_from_record_names', 'update_stock')
+
+    def collect(self):
+        self._collect_stock()
+        self._collect_unit_prices()
+
 
 class SaleList(CommerceList):
     @classmethod
@@ -1031,7 +1058,6 @@ class SaleList(CommerceList):
         return cls(records)
 
     def __init__(self, records: list):
-        # Config.setattr_in_object_from_objects(self, Sorter(self))
         super().__init__(
             records=records,
             size=cs.SALELIST_COLUMN_SIZE,
@@ -1135,23 +1161,6 @@ class BuyList(CommerceList):
 
     def upload_commerce_report(self):
         StockList.instance().receive_buys_report(self.get_buy_report())
-
-    def _collect(self, collect_method: str, update_method: str):
-        for rc in getattr(StockList.instance(),
-                          collect_method)(self.get_record_names()):
-            getattr(self.get_record(rc[0]), update_method)(rc[1])
-
-    def _collect_unit_prices(self):
-        self._collect(
-            'collect_unit_price_from_record_names', 'update_unit_price'
-        )
-
-    def _collect_stock(self):
-        self._collect('collect_stock_from_record_names', 'update_stock')
-
-    def collect(self):
-        self._collect_stock()
-        self._collect_unit_prices()
 
     def complete_pre_sell_report(self, pre_sell_report: list):
         for report in pre_sell_report:
@@ -1350,7 +1359,7 @@ class Section(Column):
                 file_types=(('', '.csv'), ),
                 default_extension='.csv',
                 initial_folder=cs.SAVE_AS_BUTTON_INITIAL_FOLDER,
-                target=(555666777, self.get_save_target())
+                target=(555666777, 0)
             )
         ]
 
@@ -1468,6 +1477,9 @@ class StockSection(Section):
         layout[0] += self.render_theme()
         return layout
 
+    def get_save_target(self) -> int:
+        return 12
+
 
 class CommerceSection(Section):
     @classmethod
@@ -1522,6 +1534,18 @@ class CommerceSection(Section):
             )
         ]
 
+    def render_collect(self) -> list:
+        return [
+            Button(
+                key=self._record_list.collect,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.COLLECT_BUTTON_PAD,
+                button_text=cs.COLLECT_BUTTON_TEXT,
+                tooltip=cs.COLLECT_BUTTON_TOOLTIP
+            )
+        ]
+
     def render_layout(self) -> list:
         """
         [
@@ -1536,6 +1560,7 @@ class CommerceSection(Section):
         layout = super().render_layout()
         layout[0] += self.render_save_as()
         layout[0] += self.render_commerce()
+        layout[0] += self.render_collect()
         return layout
 
 
@@ -1565,7 +1590,7 @@ class SaleSection(CommerceSection):
         return index
 
     def get_save_target(self) -> int:
-        return 7
+        return 8
 
 
 class BuySection(CommerceSection):
@@ -1588,18 +1613,6 @@ class BuySection(CommerceSection):
         self._record_list = BuyList.instance()
         super().__init__(cs.BUYSECTION_S_SIZE, cs.BUYSECTION_S_PAD)
 
-    def render_collect(self) -> list:
-        return [
-            Button(
-                key=self._record_list.collect,
-                image_data=cs.BUTTON_IMAGE,
-                image_size=cs.BUTTON_IMAGE_SIZE,
-                pad=cs.COLLECT_BUTTON_PAD,
-                button_text=cs.COLLECT_BUTTON_TEXT,
-                tooltip=cs.COLLECT_BUTTON_TOOLTIP
-            )
-        ]
-
     def render_supplier_index(self) -> list:
         return CommerceSection.render_base_index(
             self, cs.INDEX_INPUT_SUPPLIER_SIZE, cs.INDEX_INPUT_SUPPLIER_PAD,
@@ -1617,8 +1630,10 @@ class BuySection(CommerceSection):
         adder = RenderAdder.render_adder(self._record_list)
         layout[0].insert(7, adder[-1])
         layout[0].insert(7, adder[0])
-        layout[0] += self.render_collect()
         return layout
+
+    def get_save_target(self) -> int:
+        return 10
 
 
 # ------------------------------ #
@@ -1626,21 +1641,7 @@ class BuySection(CommerceSection):
 # ------------------------------ #
 # - hacer la parte visual
 # - hacer que el botón de guardado una vez que guarde el archvio csv, lo ejecute
-# - hacer funcionar al apply del principio
-# listos:
-# 	-finder
-# 	-sorter
-# 	-remover
-# 	-change_theme
-# 	-secure_mode
-# 	-adder
-# 	-apply
-# 	-export..
-# 	-uncheck_records..
-# 	-pre_sell..
-# 	-commerce..
-# 	-collect..
-# 	-pre_buy..
+# - solucionar export
 class Main(Window):
     __instance = None
 
@@ -1697,9 +1698,6 @@ class Main(Window):
         BuyList.instance().save_in_json()
 
     def run(self):
-        # SaleList.instance().apply()
-        # BuyList.instance().apply()
-        # BuyList.instance().clear_issues()
         while True:
             e, _ = self.read()
             print('evento:', e)
