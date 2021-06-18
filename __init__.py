@@ -1043,6 +1043,9 @@ class CommerceList(RecordList):
         self._collect_stock()
         self._collect_unit_prices()
 
+    def check_all(self):
+        tuple(map(lambda rc: rc[0].check(), self.Rows))
+
 
 class SaleList(CommerceList):
     @classmethod
@@ -1368,7 +1371,7 @@ class Section(Column):
             Button(
                 key=self._record_list.uncheck_records,
                 image_data=cs.BUTTON_IMAGE,
-                image_size=cs.BUTTON_IMAGE_SIZE,
+                image_size=cs.BUTTON_LITTLE_IMAGE_SIZE,
                 pad=cs.UNCHECK_BUTTON_PAD,
                 button_text=cs.UNCHECK_BUTTON_TEXT,
                 tooltip=cs.UNCHECK_BUTTON_TOOLTIP
@@ -1388,11 +1391,12 @@ class Section(Column):
         """
         layout = []
         layout.append(self.render_finder())
-        layout[0] += self.render_uncheck()
         layout[0] += self.render_sorter()
         layout[0] += self.render_remover()
+        layout.append(self.render_save_as())
         layout.append(self.render_index())
         layout[1] += self.render_apply()
+        layout[2] += self.render_uncheck()
         layout.append(self.render_record_list())
         return layout
 
@@ -1451,7 +1455,7 @@ class StockSection(Section):
                 image_data=cs.BUTTON_IMAGE,
                 image_size=cs.BUTTON_IMAGE_SIZE,
                 pad=cs.THEME_BUTTON_PAD,
-                button_text=cs.THEME_BUTTON_TEXT,
+                button_text=cs.THEME_BUTTON_NIGHT_TEXT if theme() == 'PapelerAbasto' else cs.THEME_BUTTON_DAY_TEXT,
                 tooltip=cs.THEME_BUTTON_TOOLTIP
             )
         ]
@@ -1470,11 +1474,12 @@ class StockSection(Section):
 
     def render_layout(self) -> list:
         layout = super().render_layout()
-        layout[0] += RenderAdder.render_adder(self._record_list)
-        layout[0] += self.render_pre_commerce()
-        layout[0] += self.render_save_as()
-        layout[0] += self.render_secure_mode()
-        layout[0] += self.render_theme()
+        adder = RenderAdder.render_adder(self._record_list)
+        layout[0].insert(7, adder[0])
+        layout[0].insert(8, adder[1])
+        layout[1] += self.render_pre_commerce()
+        layout[1] += self.render_secure_mode()
+        layout[1] += self.render_theme()
         return layout
 
     def get_save_target(self) -> int:
@@ -1515,15 +1520,6 @@ class CommerceSection(Section):
 
     def render_commerce(self) -> list:
         return [
-            Text(text='$'),
-            Text(
-                key=(
-                    self._record_list,
-                    'total_price',
-                ),
-                size=cs.TOTAL_PRICE_SIZE,
-                pad=cs.TOTAL_PRICE_PAD
-            ),
             Button(
                 key=self._record_list.commerce,
                 image_data=cs.BUTTON_IMAGE,
@@ -1531,6 +1527,14 @@ class CommerceSection(Section):
                 pad=cs.COMMERCE_BUTTON_PAD,
                 button_text=cs.COMMERCE_BUTTON_TEXT,
                 tooltip=cs.COMMERCE_BUTTON_TOOLTIP
+            ),
+            Text(
+                key=(
+                    self._record_list,
+                    'total_price',
+                ),
+                size=cs.TOTAL_PRICE_SIZE,
+                pad=cs.TOTAL_PRICE_PAD
             )
         ]
 
@@ -1546,6 +1550,18 @@ class CommerceSection(Section):
             )
         ]
 
+    def render_check_all(self) -> list:
+        return [
+            Button(
+                key=self._record_list.check_all,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_LITTLE_IMAGE_SIZE,
+                pad=cs.CHECK_ALL_BUTTON_PAD,
+                button_text=cs.CHECK_ALL_BUTTON_TEXT,
+                tooltip=cs.CHECK_ALL_BUTTON_TOOLTIP
+            )
+        ]
+
     def render_layout(self) -> list:
         """
         [
@@ -1558,9 +1574,9 @@ class CommerceSection(Section):
         ]
         """
         layout = super().render_layout()
-        layout[0] += self.render_save_as()
-        layout[0] += self.render_commerce()
-        layout[0] += self.render_collect()
+        layout[1] += self.render_collect()
+        layout[1] += self.render_commerce()
+        layout[2] += self.render_check_all()
         return layout
 
 
@@ -1628,8 +1644,8 @@ class BuySection(CommerceSection):
     def render_layout(self) -> list:
         layout = super().render_layout()
         adder = RenderAdder.render_adder(self._record_list)
-        layout[0].insert(7, adder[-1])
-        layout[0].insert(7, adder[0])
+        layout[0].insert(8, adder[0])
+        layout[0].insert(8, adder[1])
         return layout
 
     def get_save_target(self) -> int:
@@ -1639,7 +1655,9 @@ class BuySection(CommerceSection):
 # ------------------------------ #
 #          __init__.py           #
 # ------------------------------ #
-# - hacer la parte visual
+# - hacer la parte visual(
+#       la idea es poner el uncheck a la der del indice, pero mas chiquito, y un check_all con igual tamaño y pegado, el boton con tilde subirlo y cambiarle el nombre porque el tilde va para el check_all
+# )
 # - hacer que el botón de guardado una vez que guarde el archvio csv, lo ejecute
 # - solucionar export
 class Main(Window):
