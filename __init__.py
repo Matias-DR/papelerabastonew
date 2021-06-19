@@ -863,7 +863,7 @@ class StockList(RecordList):
             mode="w"
         )
         if platform != 'win32':
-            os.system(f'soffice {path}')
+            Process(target=os.system, args=(f'soffice {path}', )).start()
 
     def get_pre_commerce_report(self) -> list[list]:
         return list(
@@ -969,11 +969,6 @@ class CommerceList(RecordList):
             map(lambda rc: rc.get_csv_report(), self._get_records())
         )
 
-    def save_in_csv(self):
-        FileManager.save_in_csv(
-            path=self.get_csv_path(), data=self.get_csv_report()
-        )
-
     def export(self):
         path = Main.instance().ReturnValuesDictionary[self.export]
         if platform == 'win32':
@@ -983,7 +978,12 @@ class CommerceList(RecordList):
             )
         else:
             os.system(f'cp {self.get_csv_path()} {path}')
-            os.system(f'soffice {path}')
+            Process(target=os.system, args=(f'soffice {path}', )).start()
+
+    def save_in_csv(self):
+        FileManager.save_in_csv(
+            path=self.get_csv_path(), data=self.get_csv_report()
+        )
 
     def update_existent_record(self, report: tuple) -> bool:
         existent_record = self.get_record(report[0])
