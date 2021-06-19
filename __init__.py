@@ -856,6 +856,7 @@ class StockList(RecordList):
         self.save_in_json()
 
     def export(self):
+        print(Main.instance().ReturnValuesDictionary[self.export])
         FileManager.save_in_csv(
             path=Main.instance().ReturnValuesDictionary[self.export],
             data=self.get_csv_report(),
@@ -1716,6 +1717,7 @@ class Main(Window):
     def run(self):
         while True:
             e, _ = self.read()
+            print('ENLACE:', cs.SAVE_AS_BUTTON_INITIAL_FOLDER)
             print('evento:', e)
             try:
                 if e():

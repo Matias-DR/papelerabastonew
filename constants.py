@@ -12,7 +12,7 @@ WINDOWS_LOCATION = (0, 0)
 #               DATE AND TIME                #
 # ------------------------------------------ #
 def DATE() -> str:
-    return now('%d/%m/%Y')
+    return now('%d-%m-%Y')
 
 
 def TIME() -> str:
