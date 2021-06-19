@@ -1221,7 +1221,9 @@ class Section(Column):
                     'finder_input',
                 ),
                 size=cs.FINDER_INPUT_SIZE,
-                pad=cs.FINDER_INPUT_PAD
+                pad=cs.FINDER_INPUT_PAD,
+                default_text=cs.FINDER_INPUT_DEFAULT_TEXT,
+                tooltip=cs.FINDER_INPUT_TOOLTIP
             ),
             Button(
                 key=self._record_list.search,
@@ -1273,6 +1275,7 @@ class Section(Column):
                 pad=cs.REMOVER_COMBO_PAD,
                 values=remover_options,
                 default_value=remover_options[0],
+                tooltip=cs.REMOVER_COMBO_TOOLTIP,
                 readonly=True,
                 enable_events=True
             ),
