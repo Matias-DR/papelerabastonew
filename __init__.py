@@ -975,7 +975,6 @@ class CommerceList(RecordList):
         )
 
     def export(self):
-        print('Instancia')
         path = Main.instance().ReturnValuesDictionary[self.export]
         if platform == 'win32':
             __import__('subprocess').call(
@@ -1662,7 +1661,7 @@ class BuySection(CommerceSection):
 # ------------------------------ #
 #          __init__.py           #
 # ------------------------------ #
-# - hacer que el botón de guardado una vez que guarde el archvio csv, lo ejecute
+# hacer la parte de git
 class Main(Window):
     __instance = None
 
@@ -1721,7 +1720,6 @@ class Main(Window):
     def run(self):
         while True:
             e, _ = self.read()
-            print('evento:', e)
             try:
                 if e():
                     self.restart()
@@ -1733,7 +1731,6 @@ class Main(Window):
                 if e is None:
                     self.close()
                     break
-                print('error')
 
 
 if __name__ == '__main__':
