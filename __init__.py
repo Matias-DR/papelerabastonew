@@ -856,12 +856,14 @@ class StockList(RecordList):
         self.save_in_json()
 
     def export(self):
-        print(Main.instance().ReturnValuesDictionary[self.export])
+        path = Main.instance().ReturnValuesDictionary[self.export]
         FileManager.save_in_csv(
-            path=Main.instance().ReturnValuesDictionary[self.export],
+            path=path,
             data=self.get_csv_report(),
             mode="w"
         )
+        if platform != 'win32':
+            os.system(f'soffice {path}')
 
     def get_pre_commerce_report(self) -> list[list]:
         return list(
@@ -982,7 +984,7 @@ class CommerceList(RecordList):
             )
         else:
             os.system(f'cp {self.get_csv_path()} {path}')
-            os.system(f'soffice {self.get_csv_path()} {path}')
+            os.system(f'soffice {path}')
 
     def update_existent_record(self, report: tuple) -> bool:
         existent_record = self.get_record(report[0])
@@ -1365,7 +1367,7 @@ class Section(Column):
                 tooltip=cs.SAVE_AS_BUTTON_TOOLTIP,
                 file_types=(('.csv', ''), ),
                 default_extension='.csv',
-                initial_folder=cs.SAVE_AS_BUTTON_INITIAL_FOLDER,
+                initial_folder=cs.DESKTOP,
                 target=(555666777, 0)
             )
         ]
