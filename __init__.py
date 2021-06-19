@@ -1363,7 +1363,7 @@ class Section(Column):
                 tooltip=cs.SAVE_AS_BUTTON_TOOLTIP,
                 file_types=(('.csv', ''), ),
                 default_extension='.csv',
-                initial_folder=cs.SAVE_AS_BUTTON_INITIAL_FOLDER,
+                initial_folder=cs.DESKTOP,
                 target=(555666777, 0)
             )
         ]
