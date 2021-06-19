@@ -1358,7 +1358,7 @@ class Section(Column):
                 pad=cs.SAVE_AS_BUTTON_PAD,
                 button_text=cs.SAVE_AS_BUTTON_TEXT,
                 tooltip=cs.SAVE_AS_BUTTON_TOOLTIP,
-                file_types=(('', '.csv'), ),
+                file_types=(('.csv', ''), ),
                 default_extension='.csv',
                 initial_folder=cs.SAVE_AS_BUTTON_INITIAL_FOLDER,
                 target=(555666777, 0)
@@ -1717,7 +1717,6 @@ class Main(Window):
     def run(self):
         while True:
             e, _ = self.read()
-            print('ENLACE:', cs.SAVE_AS_BUTTON_INITIAL_FOLDER)
             print('evento:', e)
             try:
                 if e():
