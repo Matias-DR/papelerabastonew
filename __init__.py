@@ -973,6 +973,7 @@ class CommerceList(RecordList):
         )
 
     def export(self):
+        print('Instancia')
         path = Main.instance().ReturnValuesDictionary[self.export]
         if platform == 'win32':
             __import__('subprocess').call(
