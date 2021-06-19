@@ -962,7 +962,7 @@ class CommerceList(RecordList):
 
     def get_csv_report(self) -> list[list]:
         header = cs.CSV_HEADER
-        header[0].append(self.apply())
+        header[0].append(self.calculate_total_price())
         return header + list(
             map(lambda rc: rc.get_csv_report(), self._get_records())
         )
@@ -991,7 +991,7 @@ class CommerceList(RecordList):
 
     def calculate_total_price(self) -> float:
         return sum(
-            tuple(map(lambda rc: rc.apply_final_price(), self._get_records()))
+            tuple(map(lambda rc: rc.apply_final_price(), tuple(filter(lambda rc: rc.get_check(), self._get_records()))))
         )
 
     def apply(self):
@@ -1530,6 +1530,7 @@ class CommerceSection(Section):
                 button_text=cs.COMMERCE_BUTTON_TEXT,
                 tooltip=cs.COMMERCE_BUTTON_TOOLTIP
             ),
+            Text('$'),
             Text(
                 key=(
                     self._record_list,
@@ -1657,12 +1658,7 @@ class BuySection(CommerceSection):
 # ------------------------------ #
 #          __init__.py           #
 # ------------------------------ #
-# - hacer la parte visual(
-#       la idea es poner el uncheck a la der del indice, pero mas chiquito, y un check_all con igual tamaño y pegado, el boton con tilde subirlo y cambiarle el nombre porque el tilde va para el check_all
-# )
 # - hacer que el botón de guardado una vez que guarde el archvio csv, lo ejecute
-# - solucionar export
-# - Falta solucionar el total en la carga de compra y venta (el total en el csv)
 class Main(Window):
     __instance = None
 

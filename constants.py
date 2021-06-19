@@ -34,17 +34,17 @@ DESKTOP = str(path.home()).replace('\\', '/') + '/Desktop/'
 #               CSV HEADERS                  #
 # ------------------------------------------ #
 CSV_HEADER = [[DATE(), TIME()]]
-CSV_STOCK_HEADER = CSV_HEADER + [['NOMBRE', 'PRECIO POR UNIDAD', 'STOCK']]
+CSV_STOCK_HEADER = CSV_HEADER + [['NOMBRE', '$ PRECIO UNITARIO', 'STOCK']]
 CSV_SALES_HEADER = [
     [
-        'DÍA', 'HORA', 'TOTAL', 'NOMBRE', 'PRECIO UNIDAD', 'STOCK', 'VENDIDOS',
+        'DÍA', 'HORA', '$ PRECIO TOTAL', 'NOMBRE', '$ PRECIO UNITARIO', 'STOCK', 'VENDIDOS',
         'PRECIO FINAL'
     ]
 ]
 CSV_BUYS_HEADER = [
     [
-        'DÍA', 'HORA', 'TOTAL', 'NOMBRE', 'PRECIO UNIDAD', 'STOCK', 'COMPRADOS',
-        'PRECIO FINAL', 'PROVEEDOR'
+        'DÍA', 'HORA', '$ PRECIO TOTAL', 'NOMBRE', '$ PRECIO UNITARIO', 'STOCK', 'COMPRADOS',
+        '$ PRECIO FINAL', 'PROVEEDOR'
     ]
 ]
 
