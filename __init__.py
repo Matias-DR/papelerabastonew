@@ -1659,6 +1659,7 @@ class BuySection(CommerceSection):
 # )
 # - hacer que el botón de guardado una vez que guarde el archvio csv, lo ejecute
 # - solucionar export
+# - Falta solucionar el total en la carga de compra y venta (el total en el csv)
 class Main(Window):
     __instance = None
 
