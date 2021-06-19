@@ -981,6 +981,7 @@ class CommerceList(RecordList):
             )
         else:
             os.system(f'cp {self.get_csv_path()} {path}')
+            os.system(f'soffice {self.get_csv_path()} {path}')
 
     def update_existent_record(self, report: tuple) -> bool:
         existent_record = self.get_record(report[0])
