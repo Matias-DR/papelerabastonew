@@ -33,6 +33,7 @@ async def bu():
 def main():
     Process.start(asyncio.run(bu()))
     print('llega')
+    sleep(10)
     layout = [
         [
             Button('Click for generate event')
