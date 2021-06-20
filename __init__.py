@@ -24,7 +24,7 @@ class Git:
         os.system('git config user.name papelerabasto')
         os.system('git config user.email papelera.abasto@gmail.com')
         os.system('git remote add pa https://github.com/Matias-DR/PADB.git'
-                  )  # UBICAR EL REPOSITORIO CORRESPONDIENTE
+                  )  # UBICAR EL REPOSITORIO CORRESPONDIENTE.
 
     def __init__(self):
         self.auto_bu = Process(target=self.auto_push)
