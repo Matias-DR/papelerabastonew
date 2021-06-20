@@ -1,6 +1,7 @@
-from PySimpleGUI import (T, theme, Window, Column, Frame, Tab, TabGroup,
-                         Button, SaveAs, Input, Combo, Spin, Radio, Text,
-                         Checkbox)
+from PySimpleGUI import (
+    T, theme, Window, Column, Frame, Tab, TabGroup, Button, SaveAs, Input,
+    Combo, Spin, Radio, Text, Checkbox
+)
 import constants as cs
 from multiprocessing import Process
 from json import (load, dump)
@@ -23,8 +24,9 @@ class Git:
         os.system('git init')
         os.system('git config user.name papelerabasto')
         os.system('git config user.email papelera.abasto@gmail.com')
-        os.system('git remote add pa https://github.com/Matias-DR/PADB.git'
-                  )  # UBICAR EL REPOSITORIO CORRESPONDIENTE.
+        os.system(
+            'git remote add pa https://github.com/Matias-DR/PADB.git'
+        )  # UBICAR EL REPOSITORIO CORRESPONDIENTE.
 
     def __init__(self):
         self.auto_bu = Process(target=self.auto_push)
@@ -67,12 +69,12 @@ class FileManager:
                 dump([], file)
 
     def create_csv_files():
-        FileManager.save_in_csv(path=cs.CSV_SALES_PATH,
-                                data=cs.CSV_SALES_HEADER,
-                                mode="w")
-        FileManager.save_in_csv(path=cs.CSV_BUYS_PATH,
-                                data=cs.CSV_BUYS_HEADER,
-                                mode="w")
+        FileManager.save_in_csv(
+            path=cs.CSV_SALES_PATH, data=cs.CSV_SALES_HEADER, mode="w"
+        )
+        FileManager.save_in_csv(
+            path=cs.CSV_BUYS_PATH, data=cs.CSV_BUYS_HEADER, mode="w"
+        )
 
     def create_theme_file():
         with open('./db/THEME', 'w') as file:
@@ -121,8 +123,7 @@ class Config:
         for from_object in from_objects:
             for function in dir(from_object):
                 if not function.startswith('_'):
-                    setattr(in_object, function,
-                            getattr(from_object, function))
+                    setattr(in_object, function, getattr(from_object, function))
 
 
 # ------------------------------ #
@@ -192,8 +193,9 @@ class Sorter:
         self._index = self._NOMBRE()
 
     def change_sorter(self):
-        self._index = getattr(self, '_' +
-                              Main.instance()[self.change_sorter].get())()
+        self._index = getattr(
+            self, '_' + Main.instance()[self.change_sorter].get()
+        )()
 
     def _get_sort_index(self) -> int:
         return cs.SORTER_COMBO_ALL_VALUES[Main.instance()[
@@ -201,9 +203,12 @@ class Sorter:
 
     def _sort(self, field_calc: callable, field: int, reverse: bool = False):
         self._record_list._update_from_report(
-            sorted(self._record_list.get_report(),
-                   key=lambda rc: field_calc(rc[field]),
-                   reverse=reverse))
+            sorted(
+                self._record_list.get_report(),
+                key=lambda rc: field_calc(rc[field]),
+                reverse=reverse
+            )
+        )
 
     def sort_list_min_max(self):
         self._sort(self._index.field, self._get_sort_index())
@@ -254,7 +259,8 @@ class Remover:
 
     def change_remover(self):
         self._remover = getattr(
-            self, '_' + Main.instance()[self.change_remover].get())()
+            self, '_' + Main.instance()[self.change_remover].get()
+        )()
 
     def remove_records(self) -> bool:
         return self._remover.remove_records(self._record_list)
@@ -276,17 +282,21 @@ class RecordAdder:
         self._record_list = record_list
 
     def add_records(self) -> bool:
-        how_many_add = int(Main.instance()[(
-            self._record_list,
-            cs.ADDER_SPIN_KEY,
-        )].get())
+        how_many_add = int(
+            Main.instance()[(
+                self._record_list,
+                cs.ADDER_SPIN_KEY,
+            )].get()
+        )
         if how_many_add:
             report = self._record_list.get_report()
             for _ in range(how_many_add):
                 report.append(
-                    self._record_list.get_class_record().get_empty_report())
-            FileManager.save_in_json(path=self._record_list.get_json_path(),
-                                     data=report)
+                    self._record_list.get_class_record().get_empty_report()
+                )
+            FileManager.save_in_json(
+                path=self._record_list.get_json_path(), data=report
+            )
             # FileManager.save_in_json(
             #     path=self._record_list.get_json_path(),
             #     data=list(
@@ -307,21 +317,25 @@ class RecordAdder:
 class RenderAdder:
     def render_adder(record_list) -> list:
         return [
-            Spin(key=(
-                record_list,
-                cs.ADDER_SPIN_KEY,
+            Spin(
+                key=(
+                    record_list,
+                    cs.ADDER_SPIN_KEY,
+                ),
+                size=cs.ADDER_SPIN_SIZE,
+                pad=cs.ADDER_SPIN_PAD,
+                values=cs.ADDER_SPIN_VALUES,
+                initial_value=0,
+                readonly=True
             ),
-                 size=cs.ADDER_SPIN_SIZE,
-                 pad=cs.ADDER_SPIN_PAD,
-                 values=cs.ADDER_SPIN_VALUES,
-                 initial_value=0,
-                 readonly=True),
-            Button(key=record_list.add_records,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.ADDER_BUTTON_PAD,
-                   button_text=cs.ADDER_BUTTON_TEXT,
-                   tooltip=cs.ADDER_BUTTON_TOOLTIP)
+            Button(
+                key=record_list.add_records,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.ADDER_BUTTON_PAD,
+                button_text=cs.ADDER_BUTTON_TEXT,
+                tooltip=cs.ADDER_BUTTON_TOOLTIP
+            )
         ]
 
 
@@ -338,39 +352,47 @@ class Record(Column):
         return ['', 0, 0]
 
     def __init__(self, name: str, unit_price: float, stock: int):
-        default_fields = [[
-            self._name_element(name),
-            self._unit_price_element(unit_price),
-            self._stock_element(stock)
-        ]]
+        default_fields = [
+            [
+                self._name_element(name),
+                self._unit_price_element(unit_price),
+                self._stock_element(stock)
+            ]
+        ]
         super().__init__(layout=default_fields, pad=cs.RECORD_PAD)
 
     def _name_element(self, name: str) -> Input:
-        return Input(default_text=name,
-                     size=self.get_name_size(),
-                     pad=cs.NAME_PAD)
+        return Input(
+            default_text=name, size=self.get_name_size(), pad=cs.NAME_PAD
+        )
 
     def _unit_price_element(self, unit_price: float) -> Input:
-        return Input(default_text=unit_price,
-                     size=cs.UNIT_PRICE_SIZE,
-                     pad=cs.UNIT_PRICE_PAD)
+        return Input(
+            default_text=unit_price,
+            size=cs.UNIT_PRICE_SIZE,
+            pad=cs.UNIT_PRICE_PAD
+        )
 
     def _stock_element(self, stock: int) -> Input:
         return Input(default_text=stock, size=cs.STOCK_SIZE, pad=cs.STOCK_PAD)
 
     def _percent_element(self, percent: float) -> Spin:
-        return Spin(values=cs.SPIN_VALUES,
-                    initial_value=percent,
-                    readonly=True,
-                    size=cs.SPIN_SIZE,
-                    pad=cs.SPIN_PAD)
+        return Spin(
+            values=cs.SPIN_VALUES,
+            initial_value=percent,
+            readonly=True,
+            size=cs.SPIN_SIZE,
+            pad=cs.SPIN_PAD
+        )
 
     def _check_element(self, check: bool) -> Checkbox:
-        return Checkbox(text='',
-                        default=check,
-                        pad=cs.CHECK_PAD,
-                        text_color='Black',
-                        checkbox_color='White')
+        return Checkbox(
+            text='',
+            default=check,
+            pad=cs.CHECK_PAD,
+            text_color='Black',
+            checkbox_color='White'
+        )
 
     def _add_percent_and_check_elements(self, percent: int, check: bool):
         fields = self._get_fields()
@@ -456,15 +478,17 @@ class StockRecord(Record):
     @classmethod
     def change_secure_mode(cls):
         cls._secure_mode = not cls._secure_mode
-        Main.instance()[StockList.instance().secure_mode].update(
-            '🔐' if cls._secure_mode else '🔓')
+        Main.instance()[StockList.instance().secure_mode
+                       ].update('🔐' if cls._secure_mode else '🔓')
 
-    def __init__(self,
-                 name: str = '',
-                 unit_price: float = 0.,
-                 stock: int = 0,
-                 percent: int = 0,
-                 check: bool = False):
+    def __init__(
+        self,
+        name: str = '',
+        unit_price: float = 0.,
+        stock: int = 0,
+        percent: int = 0,
+        check: bool = False
+    ):
         Config.setattr_in_object_from_objects(self, BaseRecordControl(self))
         super().__init__(name, unit_price, stock)
         self._add_percent_and_check_elements(percent, check)
@@ -508,7 +532,9 @@ class StockRecord(Record):
             self.update_unit_price(
                 round(
                     self.get_unit_price() +
-                    self.get_unit_price() * self.get_percent() / 100., 2))
+                    self.get_unit_price() * self.get_percent() / 100., 2
+                )
+            )
             self.clear_percent()
 
     def have_stock(self) -> bool:
@@ -526,21 +552,25 @@ class StockRecord(Record):
 
 
 class CommerceRecord(Record):
-    def __init__(self, name: str, unit_price: float, stock: int, amount: int,
-                 final_price: float):
+    def __init__(
+        self, name: str, unit_price: float, stock: int, amount: int,
+        final_price: float
+    ):
         super().__init__(name, unit_price, stock)
         self._get_fields().append(self._amount_element(amount))
         self._get_fields().append(self._final_price_element(final_price))
 
     def _amount_element(self, amount: int):
-        return Input(default_text=amount,
-                     size=cs.AMOUNT_SIZE,
-                     pad=cs.AMOUNT_PAD)
+        return Input(
+            default_text=amount, size=cs.AMOUNT_SIZE, pad=cs.AMOUNT_PAD
+        )
 
     def _final_price_element(self, final_price: float):
-        return Input(default_text=final_price,
-                     size=cs.FINAL_PRICE_SIZE,
-                     pad=cs.FINAL_PRICE_PAD)
+        return Input(
+            default_text=final_price,
+            size=cs.FINAL_PRICE_SIZE,
+            pad=cs.FINAL_PRICE_PAD
+        )
 
     def get_amount(self) -> int:
         return int(self._get_fields()[3].get())
@@ -577,14 +607,16 @@ class CommerceRecord(Record):
 class SaleRecord(CommerceRecord):
     _NAME_SIZE = cs.SALE_NAME_SIZE
 
-    def __init__(self,
-                 name: str = '',
-                 unit_price: float = 0.,
-                 stock: int = 0,
-                 amount: int = 0,
-                 final_price: float = 0.,
-                 percent: int = 0,
-                 check: bool = False):
+    def __init__(
+        self,
+        name: str = '',
+        unit_price: float = 0.,
+        stock: int = 0,
+        amount: int = 0,
+        final_price: float = 0.,
+        percent: int = 0,
+        check: bool = False
+    ):
         super().__init__(name, unit_price, stock, amount, final_price)
         self._add_percent_and_check_elements(percent, check)
         self._make_elements_read_only()
@@ -616,15 +648,17 @@ class BuyRecord(CommerceRecord):
     def get_empty_report(cls) -> list:
         return ['', 0, 0, 0, 0, '', 0, True]
 
-    def __init__(self,
-                 name: str = '',
-                 unit_price: float = 0.,
-                 stock: int = 0,
-                 amount: int = 0,
-                 final_price: float = 0.,
-                 supplier: str = '',
-                 percent: int = 0,
-                 check: bool = False):
+    def __init__(
+        self,
+        name: str = '',
+        unit_price: float = 0.,
+        stock: int = 0,
+        amount: int = 0,
+        final_price: float = 0.,
+        supplier: str = '',
+        percent: int = 0,
+        check: bool = False
+    ):
         Config.setattr_in_object_from_objects(self, BaseRecordControl(self))
         super().__init__(name, unit_price, stock, amount, final_price)
         self._get_fields().append(self._supplier_element(supplier))
@@ -632,9 +666,9 @@ class BuyRecord(CommerceRecord):
         self._make_elements_read_only()
 
     def _supplier_element(self, supplier):
-        return Input(default_text=supplier,
-                     size=cs.SUPPLIER_SIZE,
-                     pad=cs.SUPPLIER_PAD)
+        return Input(
+            default_text=supplier, size=cs.SUPPLIER_SIZE, pad=cs.SUPPLIER_PAD
+        )
 
     def _make_elements_read_only(self):
         self._get_fields()[4].ReadOnly = True
@@ -679,8 +713,7 @@ class RecordList(Column):
         return cls.__instance
 
     def __init__(self, records: list, size: tuple, pad=tuple):
-        Config.setattr_in_object_from_objects(self, Sorter(self),
-                                              Remover(self))
+        Config.setattr_in_object_from_objects(self, Sorter(self), Remover(self))
         super().__init__(
             layout=records,
             size=size,
@@ -771,15 +804,17 @@ class RecordList(Column):
 class StockList(RecordList):
     @classmethod
     def new(cls):
-        records = [[
-            StockRecord(name, unit_price, stock, percent, check)
-        ] for name, unit_price, stock, percent, check in FileManager.load(
-            path=cs.JSON_STOCK_PATH)]
+        records = [
+            [StockRecord(name, unit_price, stock, percent, check)]
+            for name, unit_price, stock, percent, check in
+            FileManager.load(path=cs.JSON_STOCK_PATH)
+        ]
         return cls(records)
 
     def __init__(self, records: list):
-        Config.setattr_in_object_from_objects(self, RecordAdder(self),
-                                              EmptyRecordControl(self))
+        Config.setattr_in_object_from_objects(
+            self, RecordAdder(self), EmptyRecordControl(self)
+        )
         super().__init__(
             records=records,
             size=cs.RECORDLIST_COLUMN_SIZE,
@@ -791,7 +826,8 @@ class StockList(RecordList):
 
     def get_csv_report(self) -> list[list]:
         return cs.CSV_STOCK_HEADER + list(
-            map(lambda rc: rc.get_csv_report(), self._get_records()))
+            map(lambda rc: rc.get_csv_report(), self._get_records())
+        )
 
     def get_class_record(self) -> Record:
         return StockRecord
@@ -819,14 +855,18 @@ class StockList(RecordList):
     def apply(self):
         self.clear_issues()
         for rc in tuple(
-                filter(
-                    lambda rc: rc.passes_apply_percent_control() and rc.
-                    have_percent_to_apply(), self._get_records())):
+            filter(
+                lambda rc: rc.passes_apply_percent_control() and rc.
+                have_percent_to_apply(), self._get_records()
+            )
+        ):
             rc.apply_percent()
 
     def add_records_from_buys_report(self, buys_report: list):
-        FileManager.save_in_json(cs.JSON_STOCK_PATH,
-                                 self.get_report() + buys_report)
+        FileManager.save_in_json(
+            cs.JSON_STOCK_PATH,
+            self.get_report() + buys_report
+        )
 
     def update_record_from_buy_report(self, buy_report: list) -> bool:
         record = self.get_record(buy_report[0])
@@ -841,7 +881,8 @@ class StockList(RecordList):
 
     def receive_buys_report(self, buys_report: list):
         filtered_buys_report = list(
-            filter(self.update_record_from_buy_report, buys_report))
+            filter(self.update_record_from_buy_report, buys_report)
+        )
         if filtered_buys_report:
             self.complete_buy_report(filtered_buys_report)
             self.add_records_from_buys_report(filtered_buys_report)
@@ -858,23 +899,26 @@ class StockList(RecordList):
 
     def export(self):
         path = Main.instance().ReturnValuesDictionary[self.export]
-        FileManager.save_in_csv(path=path,
-                                data=self.get_csv_report(),
-                                mode="w")
+        FileManager.save_in_csv(path=path, data=self.get_csv_report(), mode="w")
         if platform != 'win32':
             Process(target=os.system, args=(f'soffice {path}', )).start()
 
     def get_pre_commerce_report(self) -> list[list]:
         return list(
-            map(lambda rc: rc.get_pre_commerce_report(),
-                self.get_checked_records()))
+            map(
+                lambda rc: rc.get_pre_commerce_report(),
+                self.get_checked_records()
+            )
+        )
 
-    def pre_commerce(self, pre_commerce_control: callable,
-                     where_to_trade: callable) -> bool:
+    def pre_commerce(
+        self, pre_commerce_control: callable, where_to_trade: callable
+    ) -> bool:
         self.save_in_json()
         if pre_commerce_control():
             return where_to_trade.instance().pre_commerce_from_report(
-                self.get_pre_commerce_report())
+                self.get_pre_commerce_report()
+            )
         return False
 
     def pre_sell(self) -> bool:
@@ -898,15 +942,17 @@ class StockList(RecordList):
 
     def collect_values(self, names: tuple, collect_method: str) -> tuple:
         return tuple(
-            map(getattr(self, collect_method),
-                list(set(self.get_record_names()).intersection(set(names)))))
+            map(
+                getattr(self, collect_method),
+                list(set(self.get_record_names()).intersection(set(names)))
+            )
+        )
 
     def collect_unit_price_from_record_name(self, name: str) -> tuple:
         return self.collect_value(name, 'get_unit_price')
 
     def collect_unit_price_from_record_names(self, names: tuple) -> tuple:
-        return self.collect_values(names,
-                                   'collect_unit_price_from_record_name')
+        return self.collect_values(names, 'collect_unit_price_from_record_name')
 
     def collect_stock_from_record_name(self, name: str) -> tuple:
         return self.collect_value(name, 'get_stock')
@@ -949,8 +995,7 @@ class CommerceList(RecordList):
         super().__init__(records=records, size=size, pad=pad)
 
     def get_sale_report(self) -> list:
-        return list(map(lambda rc: (rc.get_sale_report()),
-                        self._get_records()))
+        return list(map(lambda rc: (rc.get_sale_report()), self._get_records()))
 
     def get_buy_report(self) -> list:
         return list(map(lambda rc: (rc.get_buy_report()), self._get_records()))
@@ -959,21 +1004,24 @@ class CommerceList(RecordList):
         header = cs.CSV_HEADER
         header[0].append(self.calculate_total_price())
         return header + list(
-            map(lambda rc: rc.get_csv_report(), self._get_records()))
+            map(lambda rc: rc.get_csv_report(), self._get_records())
+        )
 
     def export(self):
         path = Main.instance().ReturnValuesDictionary[self.export]
         if platform == 'win32':
             __import__('subprocess').call(
                 f'C:\Windows\WinSxS\wow64_microsoft-windows-powershell-exe_31bf3856ad364e35_10.0.19041.546_none_5163f0069562aff6\powershell.exe cp {self.get_csv_path()} {path}',
-                shell=True)
+                shell=True
+            )
         else:
             os.system(f'cp {self.get_csv_path()} {path}')
             Process(target=os.system, args=(f'soffice {path}', )).start()
 
     def save_in_csv(self):
-        FileManager.save_in_csv(path=self.get_csv_path(),
-                                data=self.get_csv_report())
+        FileManager.save_in_csv(
+            path=self.get_csv_path(), data=self.get_csv_report()
+        )
 
     def update_existent_record(self, report: tuple) -> bool:
         existent_record = self.get_record(report[0])
@@ -988,8 +1036,11 @@ class CommerceList(RecordList):
                 map(
                     lambda rc: rc.apply_final_price(),
                     tuple(
-                        filter(lambda rc: rc.get_check(),
-                               self._get_records())))))
+                        filter(lambda rc: rc.get_check(), self._get_records())
+                    )
+                )
+            )
+        )
 
     def apply(self):
         Main.instance()[(
@@ -1001,8 +1052,10 @@ class CommerceList(RecordList):
         filtered_report = list(filter(self.update_existent_record, report))
         if filtered_report:
             self.complete_pre_sell_report(filtered_report)
-            FileManager.save_in_json(path=self.get_json_path(),
-                                     data=filtered_report + self.get_report())
+            FileManager.save_in_json(
+                path=self.get_json_path(),
+                data=filtered_report + self.get_report()
+            )
             return True
         return False
 
@@ -1026,8 +1079,9 @@ class CommerceList(RecordList):
             getattr(self.get_record(rc[0]), update_method)(rc[1])
 
     def _collect_unit_prices(self):
-        self._collect('collect_unit_price_from_record_names',
-                      'update_unit_price')
+        self._collect(
+            'collect_unit_price_from_record_names', 'update_unit_price'
+        )
 
     def _collect_stock(self):
         self._collect('collect_stock_from_record_names', 'update_stock')
@@ -1043,17 +1097,22 @@ class CommerceList(RecordList):
 class SaleList(CommerceList):
     @classmethod
     def new(cls):
-        records = [[
-            SaleRecord(name, unit_price, stock, amount, final_price, percent,
-                       check)
-        ] for name, unit_price, stock, amount, final_price, percent, check in
-                   FileManager.load(path=cs.JSON_SALES_PATH)]
+        records = [
+            [
+                SaleRecord(
+                    name, unit_price, stock, amount, final_price, percent, check
+                )
+            ] for name, unit_price, stock, amount, final_price, percent, check
+            in FileManager.load(path=cs.JSON_SALES_PATH)
+        ]
         return cls(records)
 
     def __init__(self, records: list):
-        super().__init__(records=records,
-                         size=cs.SALELIST_COLUMN_SIZE,
-                         pad=cs.SALELIST_COLUMN_PAD)
+        super().__init__(
+            records=records,
+            size=cs.SALELIST_COLUMN_SIZE,
+            pad=cs.SALELIST_COLUMN_PAD
+        )
 
     def get_csv_path(self):
         return cs.CSV_SALES_PATH
@@ -1097,7 +1156,8 @@ class SaleList(CommerceList):
             if self.passes_control():
                 if self.passes_amount_control():
                     if StockList.instance().passes_sale_control(
-                            self.get_checked_record_names()):
+                        self.get_checked_record_names()
+                    ):
                         self.apply()
                         self.upload_commerce_report()
                         self.save_in_csv()
@@ -1110,27 +1170,32 @@ class SaleList(CommerceList):
 class BuyList(CommerceList):
     @classmethod
     def new(cls):
-        records = [[
-            BuyRecord(
-                name,
-                unit_price,
-                stock,
-                amount,
-                final_price,
-                supplier,
-                percent,
-                check,
-            )
-        ] for name, unit_price, stock, amount, final_price, supplier, percent,
-                   check in FileManager.load(path=cs.JSON_BUYS_PATH)]
+        records = [
+            [
+                BuyRecord(
+                    name,
+                    unit_price,
+                    stock,
+                    amount,
+                    final_price,
+                    supplier,
+                    percent,
+                    check,
+                )
+            ] for name, unit_price, stock, amount, final_price, supplier,
+            percent, check in FileManager.load(path=cs.JSON_BUYS_PATH)
+        ]
         return cls(records)
 
     def __init__(self, records: list):
-        Config.setattr_in_object_from_objects(self, RecordAdder(self),
-                                              EmptyRecordControl(self))
-        super().__init__(records=records,
-                         size=cs.BUYLIST_COLUMN_SIZE,
-                         pad=cs.BUYLIST_COLUMN_PAD)
+        Config.setattr_in_object_from_objects(
+            self, RecordAdder(self), EmptyRecordControl(self)
+        )
+        super().__init__(
+            records=records,
+            size=cs.BUYLIST_COLUMN_SIZE,
+            pad=cs.BUYLIST_COLUMN_PAD
+        )
 
     def get_buy_report(self) -> list[list]:
         return tuple(map(lambda rc: rc.get_buy_report(), self._get_records()))
@@ -1155,7 +1220,8 @@ class BuyList(CommerceList):
         if self.passes_control():
             if self.passes_amount_control():
                 if StockList.instance().passes_buy_control(
-                        self.get_checked_record_names()):
+                    self.get_checked_record_names()
+                ):
                     self.apply()
                     self.upload_commerce_report()
                     self.save_in_csv()
@@ -1197,109 +1263,136 @@ class Section(Column):
 
     def render_finder(self) -> list:
         return [
-            Input(key=(
-                self._record_list,
-                'finder_input',
+            Input(
+                key=(
+                    self._record_list,
+                    'finder_input',
+                ),
+                size=cs.FINDER_INPUT_SIZE,
+                pad=cs.FINDER_INPUT_PAD,
+                default_text=cs.FINDER_INPUT_DEFAULT_TEXT,
+                tooltip=cs.FINDER_INPUT_TOOLTIP
             ),
-                  size=cs.FINDER_INPUT_SIZE,
-                  pad=cs.FINDER_INPUT_PAD,
-                  default_text=cs.FINDER_INPUT_DEFAULT_TEXT,
-                  tooltip=cs.FINDER_INPUT_TOOLTIP),
-            Button(key=self._record_list.search,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.FINDER_BUTTON_PAD,
-                   button_text=cs.FINDER_BUTTON_TEXT,
-                   tooltip=cs.FINDER_BUTTON_TOOLTIP)
+            Button(
+                key=self._record_list.search,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.FINDER_BUTTON_PAD,
+                button_text=cs.FINDER_BUTTON_TEXT,
+                tooltip=cs.FINDER_BUTTON_TOOLTIP
+            )
         ]
 
     def render_sorter(self) -> list:
         sort_values = self.get_sort_values()
         return [
-            Combo(key=self._record_list.change_sorter,
-                  values=sort_values,
-                  default_value=sort_values[0],
-                  size=cs.SORTER_COMBO_SIZE,
-                  pad=cs.SORTER_COMBO_PAD,
-                  tooltip=cs.SORTER_COMBO_TOOLTIP,
-                  readonly=True,
-                  enable_events=True),
-            Button(key=self._record_list.sort_list_min_max,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.SORTER_BUTTON_PAD,
-                   button_text=cs.SORTER_BUTTON_UP_TEXT,
-                   tooltip=cs.SORTER_BUTTON_UP_TOOLTIP),
-            Button(key=self._record_list.sort_list_max_min,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.SORTER_BUTTON_PAD,
-                   button_text=cs.SORTER_BUTTON_DOWN_TEXT,
-                   tooltip=cs.SORTER_BUTTON_DOWN_TOOLTIP)
+            Combo(
+                key=self._record_list.change_sorter,
+                values=sort_values,
+                default_value=sort_values[0],
+                size=cs.SORTER_COMBO_SIZE,
+                pad=cs.SORTER_COMBO_PAD,
+                tooltip=cs.SORTER_COMBO_TOOLTIP,
+                readonly=True,
+                enable_events=True
+            ),
+            Button(
+                key=self._record_list.sort_list_min_max,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.SORTER_BUTTON_PAD,
+                button_text=cs.SORTER_BUTTON_UP_TEXT,
+                tooltip=cs.SORTER_BUTTON_UP_TOOLTIP
+            ),
+            Button(
+                key=self._record_list.sort_list_max_min,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.SORTER_BUTTON_PAD,
+                button_text=cs.SORTER_BUTTON_DOWN_TEXT,
+                tooltip=cs.SORTER_BUTTON_DOWN_TOOLTIP
+            )
         ]
 
     def render_remover(self) -> list:
         remover_options = self.get_remover_options()
         return [
-            Combo(key=self._record_list.change_remover,
-                  size=cs.REMOVER_COMBO_SIZE,
-                  pad=cs.REMOVER_COMBO_PAD,
-                  values=remover_options,
-                  default_value=remover_options[0],
-                  tooltip=cs.REMOVER_COMBO_TOOLTIP,
-                  readonly=True,
-                  enable_events=True),
-            Button(key=self._record_list.remove_records,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.REMOVER_BUTTON_PAD,
-                   button_text=cs.REMOVER_BUTTON_TEXT,
-                   tooltip=cs.REMOVER_BUTTON_TOOLTIP)
+            Combo(
+                key=self._record_list.change_remover,
+                size=cs.REMOVER_COMBO_SIZE,
+                pad=cs.REMOVER_COMBO_PAD,
+                values=remover_options,
+                default_value=remover_options[0],
+                tooltip=cs.REMOVER_COMBO_TOOLTIP,
+                readonly=True,
+                enable_events=True
+            ),
+            Button(
+                key=self._record_list.remove_records,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.REMOVER_BUTTON_PAD,
+                button_text=cs.REMOVER_BUTTON_TEXT,
+                tooltip=cs.REMOVER_BUTTON_TOOLTIP
+            )
         ]
 
     def render_apply(self) -> list:
         return [
-            Button(key=self._record_list.apply,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.APPLY_BUTTON_PAD,
-                   button_text=cs.APPLY_BUTTON_TEXT,
-                   tooltip=cs.APPLY_BUTTON_TOOLTIP)
+            Button(
+                key=self._record_list.apply,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.APPLY_BUTTON_PAD,
+                button_text=cs.APPLY_BUTTON_TEXT,
+                tooltip=cs.APPLY_BUTTON_TOOLTIP
+            )
         ]
 
-    def render_base_index(self, input_size: tuple, input_pad: tuple,
-                          default_text: str) -> list:
-        index = [[
-            Input(size=input_size,
-                  pad=input_pad,
-                  default_text=default_text,
-                  readonly=True)
-        ]]
+    def render_base_index(
+        self, input_size: tuple, input_pad: tuple, default_text: str
+    ) -> list:
+        index = [
+            [
+                Input(
+                    size=input_size,
+                    pad=input_pad,
+                    default_text=default_text,
+                    readonly=True
+                )
+            ]
+        ]
         return [
-            Column(layout=index,
-                   pad=cs.INDEX_COLUMN_PAD,
-                   element_justification='center')
+            Column(
+                layout=index,
+                pad=cs.INDEX_COLUMN_PAD,
+                element_justification='center'
+            )
         ]
 
     def render_name_index(self) -> list:
-        return self.render_base_index(self.get_index_name_size(),
-                                      cs.INDEX_INPUT_NAME_PAD,
-                                      cs.INDEX_INPUT_NAME_TEXT)
+        return self.render_base_index(
+            self.get_index_name_size(), cs.INDEX_INPUT_NAME_PAD,
+            cs.INDEX_INPUT_NAME_TEXT
+        )
 
     def render_unit_price_index(self) -> list:
-        return self.render_base_index(cs.INDEX_INPUT_UNIT_PRICE_SIZE,
-                                      cs.INDEX_INPUT_UNIT_PRICE_PAD,
-                                      cs.INDEX_INPUT_UNIT_PRICE_TEXT)
+        return self.render_base_index(
+            cs.INDEX_INPUT_UNIT_PRICE_SIZE, cs.INDEX_INPUT_UNIT_PRICE_PAD,
+            cs.INDEX_INPUT_UNIT_PRICE_TEXT
+        )
 
     def render_stock_index(self) -> list:
-        return self.render_base_index(cs.INDEX_INPUT_STOCK_SIZE,
-                                      cs.INDEX_INPUT_STOCK_PAD,
-                                      cs.INDEX_INPUT_STOCK_TEXT)
+        return self.render_base_index(
+            cs.INDEX_INPUT_STOCK_SIZE, cs.INDEX_INPUT_STOCK_PAD,
+            cs.INDEX_INPUT_STOCK_TEXT
+        )
 
     def render_percent_index(self) -> list:
-        return self.render_base_index(cs.INDEX_INPUT_PERCENT_SIZE,
-                                      cs.INDEX_INPUT_PERCENT_PAD,
-                                      cs.INDEX_INPUT_PERCENT_TEXT)
+        return self.render_base_index(
+            cs.INDEX_INPUT_PERCENT_SIZE, cs.INDEX_INPUT_PERCENT_PAD,
+            cs.INDEX_INPUT_PERCENT_TEXT
+        )
 
     def render_index(self) -> list:
         index = self.render_name_index()
@@ -1309,26 +1402,30 @@ class Section(Column):
 
     def render_save_as(self) -> list:
         return [
-            SaveAs(key=self._record_list.export,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.SAVE_AS_BUTTON_PAD,
-                   button_text=cs.SAVE_AS_BUTTON_TEXT,
-                   tooltip=cs.SAVE_AS_BUTTON_TOOLTIP,
-                   file_types=(('.csv', ''), ),
-                   default_extension='.csv',
-                   initial_folder=cs.DESKTOP,
-                   target=(555666777, 0))
+            SaveAs(
+                key=self._record_list.export,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.SAVE_AS_BUTTON_PAD,
+                button_text=cs.SAVE_AS_BUTTON_TEXT,
+                tooltip=cs.SAVE_AS_BUTTON_TOOLTIP,
+                file_types=(('.csv', ''), ),
+                default_extension='.csv',
+                initial_folder=cs.DESKTOP,
+                target=(555666777, 0)
+            )
         ]
 
     def render_uncheck(self) -> list:
         return [
-            Button(key=self._record_list.uncheck_records,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_LITTLE_IMAGE_SIZE,
-                   pad=cs.UNCHECK_BUTTON_PAD,
-                   button_text=cs.UNCHECK_BUTTON_TEXT,
-                   tooltip=cs.UNCHECK_BUTTON_TOOLTIP)
+            Button(
+                key=self._record_list.uncheck_records,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_LITTLE_IMAGE_SIZE,
+                pad=cs.UNCHECK_BUTTON_PAD,
+                button_text=cs.UNCHECK_BUTTON_TEXT,
+                tooltip=cs.UNCHECK_BUTTON_TOOLTIP
+            )
         ]
 
     def render_record_list(self) -> list:
@@ -1375,18 +1472,22 @@ class StockSection(Section):
 
     def render_pre_commerce(self) -> list:
         return [
-            Button(key=self._record_list.pre_buy,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.PRE_BUY_BUTTON_PAD,
-                   button_text=cs.PRE_BUY_BUTTON_TEXT,
-                   tooltip=cs.PRE_BUY_BUTTON_TOOLTIP),
-            Button(key=self._record_list.pre_sell,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.PRE_SELL_BUTTON_PAD,
-                   button_text=cs.PRE_SELL_BUTTON_TEXT,
-                   tooltip=cs.PRE_SELL_BUTTON_TOOLTIP)
+            Button(
+                key=self._record_list.pre_buy,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.PRE_BUY_BUTTON_PAD,
+                button_text=cs.PRE_BUY_BUTTON_TEXT,
+                tooltip=cs.PRE_BUY_BUTTON_TOOLTIP
+            ),
+            Button(
+                key=self._record_list.pre_sell,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.PRE_SELL_BUTTON_PAD,
+                button_text=cs.PRE_SELL_BUTTON_TEXT,
+                tooltip=cs.PRE_SELL_BUTTON_TOOLTIP
+            )
         ]
 
     def render_index(self) -> list:
@@ -1399,23 +1500,27 @@ class StockSection(Section):
 
     def render_theme(self) -> list:
         return [
-            Button(key=FileManager.change_theme,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.THEME_BUTTON_PAD,
-                   button_text=cs.THEME_BUTTON_NIGHT_TEXT
-                   if theme() == 'PapelerAbasto' else cs.THEME_BUTTON_DAY_TEXT,
-                   tooltip=cs.THEME_BUTTON_TOOLTIP)
+            Button(
+                key=FileManager.change_theme,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.THEME_BUTTON_PAD,
+                button_text=cs.THEME_BUTTON_NIGHT_TEXT
+                if theme() == 'PapelerAbasto' else cs.THEME_BUTTON_DAY_TEXT,
+                tooltip=cs.THEME_BUTTON_TOOLTIP
+            )
         ]
 
     def render_secure_mode(self) -> list:
         return [
-            Button(key=self._record_list.secure_mode,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.SECURE_MODE_BUTTON_PAD,
-                   button_text=cs.SECURE_UNLOCK_MODE_BUTTON_TEXT,
-                   tooltip=cs.SECURE_MODE_BUTTON_TOOLTIP)
+            Button(
+                key=self._record_list.secure_mode,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.SECURE_MODE_BUTTON_PAD,
+                button_text=cs.SECURE_UNLOCK_MODE_BUTTON_TEXT,
+                tooltip=cs.SECURE_MODE_BUTTON_TOOLTIP
+            )
         ]
 
     def render_layout(self) -> list:
@@ -1436,23 +1541,27 @@ class CommerceSection(Section):
     @classmethod
     def render_layout_in_tab(cls) -> Tab:
         layout = [[cls.instance()]]
-        return Tab(cls.get_tab_title(),
-                   layout,
-                   pad=cs.TAB_PAD,
-                   border_width=cs.TAB_BORDER_WIDTH)
+        return Tab(
+            cls.get_tab_title(),
+            layout,
+            pad=cs.TAB_PAD,
+            border_width=cs.TAB_BORDER_WIDTH
+        )
 
     def __init__(self, size: tuple, pad: tuple):
         super().__init__(size, pad)
 
     def render_amount_index(self) -> list:
-        return super().render_base_index(cs.INDEX_INPUT_AMOUNT_SIZE,
-                                         cs.INDEX_INPUT_AMOUNT_PAD,
-                                         cs.INDEX_INPUT_AMOUNT_TEXT)
+        return super().render_base_index(
+            cs.INDEX_INPUT_AMOUNT_SIZE, cs.INDEX_INPUT_AMOUNT_PAD,
+            cs.INDEX_INPUT_AMOUNT_TEXT
+        )
 
     def render_final_price_index(self) -> list:
-        return self.render_base_index(cs.INDEX_INPUT_FINAL_PRICE_SIZE,
-                                      cs.INDEX_INPUT_FINAL_PRICE_PAD,
-                                      cs.INDEX_INPUT_FINAL_PRICE_TEXT)
+        return self.render_base_index(
+            cs.INDEX_INPUT_FINAL_PRICE_SIZE, cs.INDEX_INPUT_FINAL_PRICE_PAD,
+            cs.INDEX_INPUT_FINAL_PRICE_TEXT
+        )
 
     def render_index(self) -> list:
         index = super().render_index()
@@ -1462,39 +1571,47 @@ class CommerceSection(Section):
 
     def render_commerce(self) -> list:
         return [
-            Button(key=self._record_list.commerce,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.COMMERCE_BUTTON_PAD,
-                   button_text=cs.COMMERCE_BUTTON_TEXT,
-                   tooltip=cs.COMMERCE_BUTTON_TOOLTIP),
-            Text('$'),
-            Text(key=(
-                self._record_list,
-                'total_price',
+            Button(
+                key=self._record_list.commerce,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.COMMERCE_BUTTON_PAD,
+                button_text=cs.COMMERCE_BUTTON_TEXT,
+                tooltip=cs.COMMERCE_BUTTON_TOOLTIP
             ),
-                 size=cs.TOTAL_PRICE_SIZE,
-                 pad=cs.TOTAL_PRICE_PAD)
+            Text('$'),
+            Text(
+                key=(
+                    self._record_list,
+                    'total_price',
+                ),
+                size=cs.TOTAL_PRICE_SIZE,
+                pad=cs.TOTAL_PRICE_PAD
+            )
         ]
 
     def render_collect(self) -> list:
         return [
-            Button(key=self._record_list.collect,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_IMAGE_SIZE,
-                   pad=cs.COLLECT_BUTTON_PAD,
-                   button_text=cs.COLLECT_BUTTON_TEXT,
-                   tooltip=cs.COLLECT_BUTTON_TOOLTIP)
+            Button(
+                key=self._record_list.collect,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_IMAGE_SIZE,
+                pad=cs.COLLECT_BUTTON_PAD,
+                button_text=cs.COLLECT_BUTTON_TEXT,
+                tooltip=cs.COLLECT_BUTTON_TOOLTIP
+            )
         ]
 
     def render_check_all(self) -> list:
         return [
-            Button(key=self._record_list.check_all,
-                   image_data=cs.BUTTON_IMAGE,
-                   image_size=cs.BUTTON_LITTLE_IMAGE_SIZE,
-                   pad=cs.CHECK_ALL_BUTTON_PAD,
-                   button_text=cs.CHECK_ALL_BUTTON_TEXT,
-                   tooltip=cs.CHECK_ALL_BUTTON_TOOLTIP)
+            Button(
+                key=self._record_list.check_all,
+                image_data=cs.BUTTON_IMAGE,
+                image_size=cs.BUTTON_LITTLE_IMAGE_SIZE,
+                pad=cs.CHECK_ALL_BUTTON_PAD,
+                button_text=cs.CHECK_ALL_BUTTON_TEXT,
+                tooltip=cs.CHECK_ALL_BUTTON_TOOLTIP
+            )
         ]
 
     def render_layout(self) -> list:
@@ -1565,10 +1682,10 @@ class BuySection(CommerceSection):
         super().__init__(cs.BUYSECTION_S_SIZE, cs.BUYSECTION_S_PAD)
 
     def render_supplier_index(self) -> list:
-        return CommerceSection.render_base_index(self,
-                                                 cs.INDEX_INPUT_SUPPLIER_SIZE,
-                                                 cs.INDEX_INPUT_SUPPLIER_PAD,
-                                                 cs.INDEX_INPUT_SUPPLIER_TEXT)
+        return CommerceSection.render_base_index(
+            self, cs.INDEX_INPUT_SUPPLIER_SIZE, cs.INDEX_INPUT_SUPPLIER_PAD,
+            cs.INDEX_INPUT_SUPPLIER_TEXT
+        )
 
     def render_index(self) -> list:
         index = CommerceSection.render_index(self)
@@ -1603,22 +1720,30 @@ class Main(Window):
     def __init__(self):
         FileManager.db_control()
         self.load_theme()
-        super().__init__(self.render_layout(),
-                         font=('Helvetica 16'),
-                         size=cs.WINDOWS_SIZE,
-                         location=cs.WINDOWS_LOCATION)
+        super().__init__(
+            self.render_layout(),
+            font=('Helvetica 16'),
+            size=cs.WINDOWS_SIZE,
+            location=cs.WINDOWS_LOCATION
+        )
 
     def render_layout(self) -> list[list]:
-        tab_group = [[
-            SaleSection.render_layout_in_tab(),
-            BuySection.render_layout_in_tab()
-        ]]
-        layout = [[StockSection.instance()],
-                  [
-                      TabGroup(tab_group,
-                               pad=cs.TAB_GROUP_PAD,
-                               border_width=cs.TAB_GROUP_BORDER_WIDTH)
-                  ]]
+        tab_group = [
+            [
+                SaleSection.render_layout_in_tab(),
+                BuySection.render_layout_in_tab()
+            ]
+        ]
+        layout = [
+            [StockSection.instance()],
+            [
+                TabGroup(
+                    tab_group,
+                    pad=cs.TAB_GROUP_PAD,
+                    border_width=cs.TAB_GROUP_BORDER_WIDTH
+                )
+            ]
+        ]
         return layout
 
     def load_theme(self):
